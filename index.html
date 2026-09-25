@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống Theo dõi Nhiệm vụ Xúc tiến đầu tư - SCE</title>
+    <style>
+        :root {
+            --primary: #004b87;
+            --bg-color: #f0f2f5;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --danger: #d93025;
+            --success: #1e8e3e;
+            --border: #dadce0;
+        }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        
+        /* Giao diện Đăng nhập */
+        #loginScreen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 80vh;
+        }
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+        }
+        .login-box h2 {
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+        .login-box input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .login-box button {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .login-box button:hover {
+            background: #003666;
+        }
+        #errorMsg {
+            color: var(--danger);
+            margin-bottom: 15px;
+            display: none;
+            font-size: 14px;
+        }
+
+        /* Giao diện Phần mềm chính (Ẩn mặc định) */
+        #mainApp {
+            display: none;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: var(--primary);
+            text-transform: uppercase;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        .action-bar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        .add-form {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .input-group {
+            flex: 1;
+            min-width: 200px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        input[type="text"], input[type="password"], input[type="date"], select, input[type="file"] {
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        input[type="file"] {
+            padding: 7px;
+        }
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-add { background: var(--primary); align-self: flex-end; height: 40px;}
+        .btn-add:hover { background: #003666; }
+        .btn-danger { background: var(--danger); padding: 5px 10px; font-size: 12px; }
+        .btn-success { background: var(--success); padding: 5px 10px; font-size: 12px; }
+        .btn-logout { background: #5f6368; padding: 8px 15px; font-size: 14px;}
+        .btn-logout:hover { background: #3c4043; }
+        .btn-attach { background: #5f6368; padding: 4px 8px; font-size: 11px; margin-left: 10px; text-decoration: none; color: white; border-radius: 3px;}
+        
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .task-card {
+            background: var(--card-bg);
+            border-left: 5px solid var(--primary);
+            border-radius: 6px;
+            padding: 15px 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .task-card.urgent {
+            border-left-color: var(--danger);
+            background-color: #fffaf9;
+        }
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+        .task-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0;
+            flex: 1;
+            padding-right: 15px;
+        }
+        .task-meta {
+            font-size: 13px;
+            color: #5f6368;
+            margin-bottom: 15px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .urgent-text { color: var(--danger); font-weight: bold; }
+        
+        .subtasks-wrapper {
+            margin-top: 15px;
+            padding-left: 15px;
+            border-left: 2px dashed var(--border);
+        }
+        .subtask-item {
+            display: flex;
+            flex-direction: column;
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 13px;
+            border: 1px solid #e0e0e0;
+        }
+        .subtask-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .subtask-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            color: #555;
+        }
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .detail-input {
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        .subtask-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+            background: #f0f2f5;
+            padding: 15px;
+            border-radius: 6px;
+        }
+        .form-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .form-row > input, .form-row > select {
+            flex: 1;
+            min-width: 150px;
+            padding: 8px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- MÀN HÌNH ĐĂNG NHẬP -->
+<div id="loginScreen">
+    <div class="login-box">
+        <h2>Đăng nhập Hệ thống</h2>
+        <p style="font-size: 14px; color: #666; margin-bottom: 20px;">Vui lòng nhập mật khẩu để truy cập</p>
+        <div id="errorMsg">Mật khẩu không chính xác!</div>
+        <input type="password" id="passwordInput" placeholder="Nhập mật khẩu..." onkeypress="handleLoginPress(event)">
+        <button onclick="checkPassword()">Xác nhận</button>
+    </div>
+</div>
+
+<!-- MÀN HÌNH PHẦN MỀM CHÍNH -->
+<div class="container" id="mainApp">
+    <div class="header">
+        <h1>Phần mềm Theo dõi Nhiệm vụ Xúc tiến đầu tư (SCE)</h1>
+        <p>Sắp xếp tự động theo thời hạn hoàn thành yêu cầu</p>
+    </div>
+
+    <!-- Thanh công cụ -->
+    <div class="action-bar">
+        <button class="btn btn-logout" onclick="logout()">🔒 Đăng xuất</button>
+    </div>
+
+    <div class="add-form">
+        <div class="input-group" style="flex: 2;">
+            <label>Chương trình / Kế hoạch / TBKL</label>
+            <input type="text" id="newTaskTitle" placeholder="Nhập tên Chương trình / Kế hoạch / Thông báo kết luận...">
+        </div>
+        <div class="input-group">
+            <label>Đính kèm Văn bản (Tùy chọn)</label>
+            <input type="file" id="newTaskFile" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png">
+        </div>
+        <button class="btn btn-add" onclick="addTask()">+ Thêm Chương trình</button>
+    </div>
+
+    <div class="task-list" id="taskList">
+        <!-- Tasks will be rendered here by JavaScript -->
+    </div>
+</div>
+
+<script>
+    // === CẤU HÌNH MẬT KHẨU BẢO VỆ ===
+    const APP_PASSWORD = "Xtdt@Sce"; 
+    
+    // Kiểm tra trạng thái đăng nhập khi load trang
+    window.onload = function() {
+        if(sessionStorage.getItem('isLoggedIn') === 'true') {
+            showApp();
+        }
+    };
+
+    function handleLoginPress(e) {
+        if (e.key === 'Enter') {
+            checkPassword();
+        }
+    }
+
+    function checkPassword() {
+        const input = document.getElementById('passwordInput').value;
+        if (input === APP_PASSWORD) {
+            sessionStorage.setItem('isLoggedIn', 'true');
+            showApp();
+        } else {
+            document.getElementById('errorMsg').style.display = 'block';
+            document.getElementById('passwordInput').value = '';
+        }
+    }
+
+    function showApp() {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        initApp(); // Load dữ liệu
+    }
+
+    function logout() {
+        sessionStorage.removeItem('isLoggedIn');
+        document.getElementById('mainApp').style.display = 'none';
+        document.getElementById('loginScreen').style.display = 'flex';
+        document.getElementById('passwordInput').value = '';
+        document.getElementById('errorMsg').style.display = 'none';
+    }
+
+
+    // === LOGIC PHẦN MỀM CHÍNH ===
+    let taskIdCounter = 100;
+    let subtaskIdCounter = 1000;
+    let tasks = [];
+
+    const initialData = [
+        {
+            id: 1,
+            title: "Triển khai đợt cao điểm 100 ngày thực hiện các nhiệm vụ trọng tâm về chuyển đổi số theo KH số 277/KH-UBND",
+            fileName: null,
+            fileData: null,
+            subtasks: [
+                { 
+                    id: 101, 
+                    title: "Xúc tiến, tháo gỡ và triển khai các dự án đầu tư mới trong lĩnh vực kinh tế số", 
+                    deadline: "2026-10-22", 
+                    chutri: "Phòng HCTC",
+                    phoihop: "Các Phòng chuyên môn",
+                    trangthai: "Chưa thực hiện",
+                    ketqua: "Phấn đấu 03-05 dự án quy mô lớn"
+                }
+            ]
+        }
+    ];
+
+    function initApp() {
+        const savedData = localStorage.getItem('sce_tasks_data_v2');
+        if (savedData) {
+            tasks = JSON.parse(savedData);
+            updateCounters();
+        } else {
+            tasks = initialData;
+            saveData();
+        }
+        renderTasks();
+    }
+
+    function updateCounters() {
+        tasks.forEach(t => {
+            if (t.id >= taskIdCounter) taskIdCounter = t.id + 1;
+            t.subtasks.forEach(st => {
+                if (st.id >= subtaskIdCounter) subtaskIdCounter = st.id + 1;
+            });
+        });
+    }
+
+    function saveData() {
+        localStorage.setItem('sce_tasks_data_v2', JSON.stringify(tasks));
+    }
+
+    function isTaskUrgent(task) {
+        if (!task.subtasks || task.subtasks.length === 0) return false;
+        const today = new Date();
+        let urgent = false;
+        task.subtasks.forEach(st => {
+            if (st.deadline && st.trangthai !== "Đã hoàn thành") {
+                const taskDate = new Date(st.deadline);
+                const timeDiff = taskDate.getTime() - today.getTime();
+                const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                if (daysDiff <= 7) urgent = true;
+            }
+        });
+        return urgent;
+    }
+    
+    function getEarliestDeadline(task) {
+        if (!task.subtasks || task.subtasks.length === 0) return null;
+        let earliest = null;
+        task.subtasks.forEach(st => {
+            if (st.deadline && st.trangthai !== "Đã hoàn thành") {
+                const d = new Date(st.deadline);
+                if (!earliest || d < earliest) earliest = d;
+            }
+        });
+        return earliest;
+    }
+
+    function handleFileUpload(fileInput, callback) {
+        const file = fileInput.files[0];
+        if (file) {
+            if(file.size > 2 * 1024 * 1024) {
+                alert("File quá lớn! Vui lòng đính kèm file nhỏ hơn 2MB.");
+                callback(null, null);
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                callback(file.name, e.target.result);
+            };
+            reader.readAsDataURL(file);
+        } else {
+            callback(null, null);
+        }
+    }
+
+    function renderTasks() {
+        const container = document.getElementById('taskList');
+        container.innerHTML = '';
+
+        tasks.sort((a, b) => {
+            const deadlineA = getEarliestDeadline(a);
+            const deadlineB = getEarliestDeadline(b);
+            if (!deadlineA && !deadlineB) return 0;
+            if (!deadlineA) return 1;
+            if (!deadlineB) return -1;
+            return deadlineA - deadlineB;
+        });
+
+        tasks.forEach(task => {
+            const urgentClass = isTaskUrgent(task) ? 'urgent' : '';
+            const urgentText = isTaskUrgent(task) ? '<span class="urgent-text">⚠️ Có nhiệm vụ cụ thể gấp/quá hạn</span>' : '';
+
+            let fileHtml = '';
+            if (task.fileName) {
+                if (task.fileData) {
+                    fileHtml = `<a href="${task.fileData}" download="${task.fileName}" class="btn-attach">📎 ${task.fileName}</a>`;
+                } else {
+                    fileHtml = `<span class="btn-attach" style="background:#888;">📎 ${task.fileName}</span>`;
+                }
+            }
+
+            let subtasksHTML = '';
+            task.subtasks.forEach(st => {
+                subtasksHTML += `
+                    <div class="subtask-item">
+                        <div class="subtask-top">
+                            <span>- ${st.title}</span>
+                            <button class="btn btn-danger" onclick="deleteSubtask(${task.id}, ${st.id})">Xóa</button>
+                        </div>
+                        <div class="subtask-details">
+                            <div class="detail-item">
+                                <label style="font-size: 11px; color: #888;">Thời hạn</label>
+                                <input type="date" class="detail-input" value="${st.deadline}" onchange="updateSubtask(${task.id}, ${st.id}, 'deadline', this.value)">
+                            </div>
+                            <div class="detail-item">
+                                <label style="font-size: 11px; color: #888;">Chủ trì</label>
+                                <input type="text" class="detail-input" value="${st.chutri || ''}" placeholder="Đơn vị chủ trì" onchange="updateSubtask(${task.id}, ${st.id}, 'chutri', this.value)">
+                            </div>
+                            <div class="detail-item">
+                                <label style="font-size: 11px; color: #888;">Phối hợp</label>
+                                <input type="text" class="detail-input" value="${st.phoihop || ''}" placeholder="Đơn vị phối hợp" onchange="updateSubtask(${task.id}, ${st.id}, 'phoihop', this.value)">
+                            </div>
+                            <div class="detail-item">
+                                <label style="font-size: 11px; color: #888;">Trạng thái</label>
+                                <select class="detail-input" onchange="updateSubtask(${task.id}, ${st.id}, 'trangthai', this.value)">
+                                    <option value="Chưa thực hiện" ${st.trangthai === 'Chưa thực hiện' ? 'selected' : ''}>Chưa thực hiện</option>
+                                    <option value="Đang thực hiện" ${st.trangthai === 'Đang thực hiện' ? 'selected' : ''}>Đang thực hiện</option>
+                                    <option value="Đã hoàn thành" ${st.trangthai === 'Đã hoàn thành' ? 'selected' : ''}>Đã hoàn thành</option>
+                                    <option value="Chậm tiến độ" ${st.trangthai === 'Chậm tiến độ' ? 'selected' : ''}>Chậm tiến độ</option>
+                                </select>
+                            </div>
+                            <div class="detail-item" style="grid-column: 1 / -1;">
+                                <label style="font-size: 11px; color: #888;">Kết quả</label>
+                                <input type="text" class="detail-input" value="${st.ketqua || ''}" placeholder="Ghi nhận kết quả thực hiện..." onchange="updateSubtask(${task.id}, ${st.id}, 'ketqua', this.value)">
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            const card = document.createElement('div');
+            card.className = `task-card ${urgentClass}`;
+            card.innerHTML = `
+                <div class="task-header">
+                    <h3 class="task-title">${task.title} ${fileHtml}</h3>
+                    <button class="btn btn-danger" onclick="deleteTask(${task.id})">Xóa Chương trình</button>
+                </div>
+                <div class="task-meta">
+                    ${urgentText}
+                </div>
+                
+                <div class="subtasks-wrapper">
+                    <h4 style="margin: 0 0 10px 0; font-size: 14px; color: var(--primary);">Danh sách Nhiệm vụ cụ thể:</h4>
+                    ${subtasksHTML}
+                    
+                    <div class="subtask-form">
+                        <strong style="font-size:13px;">Thêm Nhiệm vụ cụ thể mới:</strong>
+                        <div class="form-row">
+                            <input type="text" id="st-title-${task.id}" placeholder="Tên nhiệm vụ cụ thể..." style="flex: 100%;">
+                        </div>
+                        <div class="form-row">
+                            <input type="date" id="st-deadline-${task.id}" title="Thời hạn">
+                            <input type="text" id="st-chutri-${task.id}" placeholder="Chủ trì">
+                            <input type="text" id="st-phoihop-${task.id}" placeholder="Phối hợp">
+                            <select id="st-trangthai-${task.id}">
+                                <option value="Chưa thực hiện">Chưa thực hiện</option>
+                                <option value="Đang thực hiện">Đang thực hiện</option>
+                                <option value="Đã hoàn thành">Đã hoàn thành</option>
+                                <option value="Chậm tiến độ">Chậm tiến độ</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <input type="text" id="st-ketqua-${task.id}" placeholder="Kết quả / Sản phẩm yêu cầu..." style="flex: 1;">
+                            <button class="btn btn-success" onclick="addSubtask(${task.id})" style="flex: 0 0 auto;">+ Thêm Nhiệm vụ</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function addTask() {
+        const title = document.getElementById('newTaskTitle').value;
+        const fileInput = document.getElementById('newTaskFile');
+
+        if (!title) {
+            alert("Vui lòng nhập tên Chương trình / Kế hoạch!");
+            return;
+        }
+
+        handleFileUpload(fileInput, (fileName, fileData) => {
+            tasks.push({
+                id: taskIdCounter++,
+                title: title,
+                fileName: fileName,
+                fileData: fileData,
+                subtasks: []
+            });
+
+            document.getElementById('newTaskTitle').value = '';
+            fileInput.value = '';
+
+            saveData();
+            renderTasks();
+        });
+    }
+
+    function deleteTask(id) {
+        if(confirm("Bạn có chắc chắn muốn xóa Chương trình này?")) {
+            tasks = tasks.filter(t => t.id !== id);
+            saveData();
+            renderTasks();
+        }
+    }
+
+    function addSubtask(taskId) {
+        const title = document.getElementById(`st-title-${taskId}`).value;
+        const deadline = document.getElementById(`st-deadline-${taskId}`).value;
+        const chutri = document.getElementById(`st-chutri-${taskId}`).value;
+        const phoihop = document.getElementById(`st-phoihop-${taskId}`).value;
+        const trangthai = document.getElementById(`st-trangthai-${taskId}`).value;
+        const ketqua = document.getElementById(`st-ketqua-${taskId}`).value;
+
+        if (!title) {
+            alert("Vui lòng nhập tên nhiệm vụ cụ thể!");
+            return;
+        }
+
+        const task = tasks.find(t => t.id === taskId);
+        if (task) {
+            task.subtasks.push({
+                id: subtaskIdCounter++,
+                title: title,
+                deadline: deadline,
+                chutri: chutri,
+                phoihop: phoihop,
+                trangthai: trangthai,
+                ketqua: ketqua
+            });
+            saveData();
+            renderTasks();
+        }
+    }
+    
+    function updateSubtask(taskId, subtaskId, field, value) {
+        const task = tasks.find(t => t.id === taskId);
+        if (task) {
+            const subtask = task.subtasks.find(st => st.id === subtaskId);
+            if (subtask) {
+                subtask[field] = value;
+                saveData();
+                if (field === 'deadline' || field === 'trangthai') {
+                    renderTasks(); 
+                }
+            }
+        }
+    }
+
+    function deleteSubtask(taskId, subtaskId) {
+        if(confirm("Xóa nhiệm vụ cụ thể này?")) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                task.subtasks = task.subtasks.filter(st => st.id !== subtaskId);
+                saveData();
+                renderTasks();
+            }
+        }
+    }
+</script>
+</body>
+</html>
