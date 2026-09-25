@@ -12,6 +12,7 @@
             --text-main: #333333;
             --danger: #d93025;
             --success: #1e8e3e;
+            --info: #17a2b8;
             --border: #dadce0;
         }
         body {
@@ -76,7 +77,7 @@
             font-size: 14px;
         }
 
-        /* Giao diện Phần mềm chính (Ẩn mặc định) */
+        /* Giao diện Phần mềm chính */
         #mainApp {
             display: none;
         }
@@ -124,7 +125,7 @@
             padding: 7px;
         }
         .btn {
-            padding: 10px 15px;
+            padding: 6px 12px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
@@ -134,11 +135,13 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            font-size: 12px;
         }
-        .btn-add { background: var(--primary); align-self: flex-end; height: 40px;}
+        .btn-add { background: var(--primary); align-self: flex-end; height: 40px; padding: 10px 15px; font-size: 14px;}
         .btn-add:hover { background: #003666; }
-        .btn-danger { background: var(--danger); padding: 5px 10px; font-size: 12px; }
-        .btn-success { background: var(--success); padding: 5px 10px; font-size: 12px; }
+        .btn-danger { background: var(--danger); }
+        .btn-success { background: var(--success); }
+        .btn-edit { background: var(--info); }
         .btn-logout { background: #5f6368; padding: 8px 15px; font-size: 14px;}
         .btn-logout:hover { background: #3c4043; }
         .btn-attach { background: #5f6368; padding: 4px 8px; font-size: 11px; margin-left: 10px; text-decoration: none; color: white; border-radius: 3px;}
@@ -154,6 +157,7 @@
             border-radius: 6px;
             padding: 15px 20px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: all 0.3s;
         }
         .task-card.urgent {
             border-left-color: var(--danger);
@@ -164,14 +168,20 @@
             justify-content: space-between;
             align-items: flex-start;
             margin-bottom: 10px;
+            gap: 10px;
         }
         .task-title {
             font-size: 16px;
             font-weight: 600;
             margin: 0;
             flex: 1;
-            padding-right: 15px;
         }
+        .task-actions {
+            display: flex;
+            gap: 5px;
+            flex-shrink: 0;
+        }
+        
         .task-meta {
             font-size: 13px;
             color: #5f6368;
@@ -188,6 +198,18 @@
             padding-left: 15px;
             border-left: 2px dashed var(--border);
         }
+        .subtasks-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .subtasks-header-row h4 {
+            margin: 0;
+            font-size: 14px;
+            color: var(--primary);
+        }
+        
         .subtask-item {
             display: flex;
             flex-direction: column;
@@ -197,6 +219,7 @@
             margin-bottom: 10px;
             font-size: 13px;
             border: 1px solid #e0e0e0;
+            transition: all 0.3s;
         }
         .subtask-top {
             display: flex;
@@ -205,6 +228,10 @@
             margin-bottom: 8px;
             font-weight: bold;
             font-size: 14px;
+            gap: 10px;
+        }
+        .subtask-title-text {
+            flex: 1;
         }
         .subtask-details {
             display: grid;
@@ -217,20 +244,57 @@
             flex-direction: column;
             gap: 4px;
         }
+        
+        /* Style cho input ở chế độ xem vs chế độ sửa */
         .detail-input {
             padding: 5px;
-            border: 1px solid #ccc;
+            border: 1px solid transparent;
             border-radius: 3px;
             font-size: 12px;
+            background-color: transparent;
+            color: #333;
         }
+        .detail-input.editing {
+            border: 1px solid var(--primary);
+            background-color: #fff;
+            box-shadow: 0 0 3px rgba(0,75,135,0.2);
+        }
+        select.detail-input:not(.editing) {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            pointer-events: none;
+            color: #333;
+        }
+
+        .task-title-input {
+            width: 100%;
+            font-size: 16px;
+            font-weight: 600;
+            padding: 5px;
+            margin-bottom: 5px;
+            border: 1px solid var(--primary);
+            border-radius: 4px;
+        }
+        .subtask-title-input {
+            width: 100%;
+            font-size: 14px;
+            font-weight: bold;
+            padding: 5px;
+            border: 1px solid var(--primary);
+            border-radius: 4px;
+        }
+        
+        /* Ẩn form thêm mới lúc đầu */
         .subtask-form {
-            display: flex;
+            display: none; 
             flex-direction: column;
             gap: 10px;
             margin-top: 10px;
-            background: #f0f2f5;
+            background: #e3f2fd; /* Màu xanh nhạt để nổi bật form */
             padding: 15px;
             border-radius: 6px;
+            border: 1px dashed var(--primary);
         }
         .form-row {
             display: flex;
@@ -243,6 +307,17 @@
             padding: 8px;
             font-size: 13px;
         }
+
+        /* Classes ẩn hiện phần tử theo trạng thái Edit */
+        .show-in-edit { display: none !important; }
+        .hide-in-edit { display: flex !important; }
+        
+        .is-editing .show-in-edit { display: flex !important; }
+        .is-editing .hide-in-edit { display: none !important; }
+        
+        /* Hiệu ứng focus khi đang sửa */
+        .task-card.is-editing { border-left-color: var(--info); box-shadow: 0 4px 8px rgba(0,0,0,0.1);}
+        .subtask-item.is-editing { border-color: var(--info); background-color: #f0f8ff;}
     </style>
 </head>
 <body>
@@ -272,7 +347,7 @@
 
     <div class="add-form">
         <div class="input-group" style="flex: 2;">
-            <label>Chương trình / Kế hoạch / TBKL</label>
+            <label>Chương trình / Kế hoạch / TBKL mới</label>
             <input type="text" id="newTaskTitle" placeholder="Nhập tên Chương trình / Kế hoạch / Thông báo kết luận...">
         </div>
         <div class="input-group">
@@ -283,7 +358,7 @@
     </div>
 
     <div class="task-list" id="taskList">
-        <!-- Tasks will be rendered here by JavaScript -->
+        <!-- Danh sách được render tự động bằng JS -->
     </div>
 </div>
 
@@ -291,7 +366,6 @@
     // === CẤU HÌNH MẬT KHẨU BẢO VỆ ===
     const APP_PASSWORD = "Xtdt@Sce"; 
     
-    // Kiểm tra trạng thái đăng nhập khi load trang
     window.onload = function() {
         if(sessionStorage.getItem('isLoggedIn') === 'true') {
             showApp();
@@ -318,7 +392,7 @@
     function showApp() {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
-        initApp(); // Load dữ liệu
+        initApp(); 
     }
 
     function logout() {
@@ -334,36 +408,17 @@
     let taskIdCounter = 100;
     let subtaskIdCounter = 1000;
     let tasks = [];
-
-    const initialData = [
-        {
-            id: 1,
-            title: "Triển khai đợt cao điểm 100 ngày thực hiện các nhiệm vụ trọng tâm về chuyển đổi số theo KH số 277/KH-UBND",
-            fileName: null,
-            fileData: null,
-            subtasks: [
-                { 
-                    id: 101, 
-                    title: "Xúc tiến, tháo gỡ và triển khai các dự án đầu tư mới trong lĩnh vực kinh tế số", 
-                    deadline: "2026-10-22", 
-                    chutri: "Phòng HCTC",
-                    phoihop: "Các Phòng chuyên môn",
-                    trangthai: "Chưa thực hiện",
-                    ketqua: "Phấn đấu 03-05 dự án quy mô lớn"
-                }
-            ]
-        }
-    ];
+    
+    // Lưu trạng thái xem đang sửa dòng nào
+    let editingTaskId = null;
+    let editingSubtaskIds = []; 
 
     function initApp() {
         const savedData = localStorage.getItem('sce_tasks_data_v2');
         if (savedData) {
             tasks = JSON.parse(savedData);
             updateCounters();
-        } else {
-            tasks = initialData;
-            saveData();
-        }
+        } 
         renderTasks();
     }
 
@@ -429,17 +484,21 @@
         const container = document.getElementById('taskList');
         container.innerHTML = '';
 
-        tasks.sort((a, b) => {
-            const deadlineA = getEarliestDeadline(a);
-            const deadlineB = getEarliestDeadline(b);
-            if (!deadlineA && !deadlineB) return 0;
-            if (!deadlineA) return 1;
-            if (!deadlineB) return -1;
-            return deadlineA - deadlineB;
-        });
+        // Tạm dừng sắp xếp nếu người dùng đang gõ/chỉnh sửa để tránh giao diện bị nhảy lung tung
+        if(editingTaskId === null && editingSubtaskIds.length === 0) {
+            tasks.sort((a, b) => {
+                const deadlineA = getEarliestDeadline(a);
+                const deadlineB = getEarliestDeadline(b);
+                if (!deadlineA && !deadlineB) return 0;
+                if (!deadlineA) return 1;
+                if (!deadlineB) return -1;
+                return deadlineA - deadlineB;
+            });
+        }
 
         tasks.forEach(task => {
-            const urgentClass = isTaskUrgent(task) ? 'urgent' : '';
+            const isTaskEditing = editingTaskId === task.id;
+            const taskCardClass = `task-card ${isTaskUrgent(task) ? 'urgent' : ''} ${isTaskEditing ? 'is-editing' : ''}`;
             const urgentText = isTaskUrgent(task) ? '<span class="urgent-text">⚠️ Có nhiệm vụ cụ thể gấp/quá hạn</span>' : '';
 
             let fileHtml = '';
@@ -453,28 +512,41 @@
 
             let subtasksHTML = '';
             task.subtasks.forEach(st => {
+                const isSubtaskEditing = editingSubtaskIds.includes(st.id);
+                const stClass = `subtask-item ${isSubtaskEditing ? 'is-editing' : ''}`;
+                const inputState = isSubtaskEditing ? 'editing' : '';
+                const readonlyAttr = isSubtaskEditing ? '' : 'readonly';
+                
                 subtasksHTML += `
-                    <div class="subtask-item">
+                    <div class="${stClass}">
                         <div class="subtask-top">
-                            <span>- ${st.title}</span>
-                            <button class="btn btn-danger" onclick="deleteSubtask(${task.id}, ${st.id})">Xóa</button>
+                            <!-- Chế độ Xem -->
+                            <span class="subtask-title-text hide-in-edit">- ${st.title}</span>
+                            <!-- Chế độ Sửa -->
+                            <input type="text" id="edit-st-title-${st.id}" class="subtask-title-input show-in-edit" value="${st.title}">
+                            
+                            <div class="task-actions">
+                                <button class="btn btn-edit hide-in-edit" onclick="enableSubtaskEdit(${st.id})">Sửa</button>
+                                <button class="btn btn-success show-in-edit" onclick="saveSubtaskEdit(${task.id}, ${st.id})">Lưu</button>
+                                <button class="btn btn-danger hide-in-edit" onclick="deleteSubtask(${task.id}, ${st.id})">Xóa</button>
+                            </div>
                         </div>
                         <div class="subtask-details">
                             <div class="detail-item">
                                 <label style="font-size: 11px; color: #888;">Thời hạn</label>
-                                <input type="date" class="detail-input" value="${st.deadline}" onchange="updateSubtask(${task.id}, ${st.id}, 'deadline', this.value)">
+                                <input type="date" id="edit-st-dl-${st.id}" class="detail-input ${inputState}" value="${st.deadline}" ${readonlyAttr}>
                             </div>
                             <div class="detail-item">
                                 <label style="font-size: 11px; color: #888;">Chủ trì</label>
-                                <input type="text" class="detail-input" value="${st.chutri || ''}" placeholder="Đơn vị chủ trì" onchange="updateSubtask(${task.id}, ${st.id}, 'chutri', this.value)">
+                                <input type="text" id="edit-st-ct-${st.id}" class="detail-input ${inputState}" value="${st.chutri || ''}" placeholder="Đơn vị chủ trì" ${readonlyAttr}>
                             </div>
                             <div class="detail-item">
                                 <label style="font-size: 11px; color: #888;">Phối hợp</label>
-                                <input type="text" class="detail-input" value="${st.phoihop || ''}" placeholder="Đơn vị phối hợp" onchange="updateSubtask(${task.id}, ${st.id}, 'phoihop', this.value)">
+                                <input type="text" id="edit-st-ph-${st.id}" class="detail-input ${inputState}" value="${st.phoihop || ''}" placeholder="Đơn vị phối hợp" ${readonlyAttr}>
                             </div>
                             <div class="detail-item">
                                 <label style="font-size: 11px; color: #888;">Trạng thái</label>
-                                <select class="detail-input" onchange="updateSubtask(${task.id}, ${st.id}, 'trangthai', this.value)">
+                                <select id="edit-st-tt-${st.id}" class="detail-input ${inputState}" ${isSubtaskEditing ? '' : 'disabled'}>
                                     <option value="Chưa thực hiện" ${st.trangthai === 'Chưa thực hiện' ? 'selected' : ''}>Chưa thực hiện</option>
                                     <option value="Đang thực hiện" ${st.trangthai === 'Đang thực hiện' ? 'selected' : ''}>Đang thực hiện</option>
                                     <option value="Đã hoàn thành" ${st.trangthai === 'Đã hoàn thành' ? 'selected' : ''}>Đã hoàn thành</option>
@@ -483,7 +555,7 @@
                             </div>
                             <div class="detail-item" style="grid-column: 1 / -1;">
                                 <label style="font-size: 11px; color: #888;">Kết quả</label>
-                                <input type="text" class="detail-input" value="${st.ketqua || ''}" placeholder="Ghi nhận kết quả thực hiện..." onchange="updateSubtask(${task.id}, ${st.id}, 'ketqua', this.value)">
+                                <input type="text" id="edit-st-kq-${st.id}" class="detail-input ${inputState}" value="${st.ketqua || ''}" placeholder="Ghi nhận kết quả thực hiện..." ${readonlyAttr}>
                             </div>
                         </div>
                     </div>
@@ -491,22 +563,42 @@
             });
 
             const card = document.createElement('div');
-            card.className = `task-card ${urgentClass}`;
+            card.className = taskCardClass;
             card.innerHTML = `
                 <div class="task-header">
-                    <h3 class="task-title">${task.title} ${fileHtml}</h3>
-                    <button class="btn btn-danger" onclick="deleteTask(${task.id})">Xóa Chương trình</button>
+                    <!-- Chế độ xem -->
+                    <h3 class="task-title hide-in-edit">${task.title} ${fileHtml}</h3>
+                    
+                    <!-- Chế độ sửa -->
+                    <div class="show-in-edit" style="flex: 1; flex-direction: column;">
+                        <input type="text" id="edit-task-title-${task.id}" class="task-title-input" value="${task.title}">
+                        <div style="display:flex; gap: 10px; align-items:center; margin-top:5px;">
+                            <label style="font-size: 12px; color: #555;">Kèm file mới (Tùy chọn):</label>
+                            <input type="file" id="edit-task-file-${task.id}" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png" style="font-size:12px; padding:3px; border:1px solid #ccc; border-radius:3px; background:#fff;">
+                        </div>
+                    </div>
+
+                    <div class="task-actions">
+                        <button class="btn btn-edit hide-in-edit" onclick="enableTaskEdit(${task.id})">Sửa Chương trình</button>
+                        <button class="btn btn-success show-in-edit" onclick="saveTaskEdit(${task.id})">Lưu Chương trình</button>
+                        <button class="btn btn-danger hide-in-edit" onclick="deleteTask(${task.id})">Xóa</button>
+                    </div>
                 </div>
                 <div class="task-meta">
                     ${urgentText}
                 </div>
                 
                 <div class="subtasks-wrapper">
-                    <h4 style="margin: 0 0 10px 0; font-size: 14px; color: var(--primary);">Danh sách Nhiệm vụ cụ thể:</h4>
+                    <div class="subtasks-header-row">
+                        <h4>Danh sách Nhiệm vụ cụ thể:</h4>
+                        <button class="btn btn-success" onclick="toggleSubtaskForm(${task.id})">+ Thêm mới</button>
+                    </div>
+                    
                     ${subtasksHTML}
                     
-                    <div class="subtask-form">
-                        <strong style="font-size:13px;">Thêm Nhiệm vụ cụ thể mới:</strong>
+                    <!-- Form thêm mới (ẩn mặc định) -->
+                    <div class="subtask-form" id="st-form-container-${task.id}">
+                        <div style="font-weight:bold; font-size:13px; color:var(--primary); margin-bottom:5px;">Tạo Nhiệm vụ cụ thể mới:</div>
                         <div class="form-row">
                             <input type="text" id="st-title-${task.id}" placeholder="Tên nhiệm vụ cụ thể..." style="flex: 100%;">
                         </div>
@@ -521,9 +613,10 @@
                                 <option value="Chậm tiến độ">Chậm tiến độ</option>
                             </select>
                         </div>
-                        <div class="form-row">
+                        <div class="form-row" style="justify-content: flex-end;">
                             <input type="text" id="st-ketqua-${task.id}" placeholder="Kết quả / Sản phẩm yêu cầu..." style="flex: 1;">
-                            <button class="btn btn-success" onclick="addSubtask(${task.id})" style="flex: 0 0 auto;">+ Thêm Nhiệm vụ</button>
+                            <button class="btn btn-success" onclick="addSubtask(${task.id})" style="flex: 0 0 auto;">Lưu</button>
+                            <button class="btn btn-danger" onclick="toggleSubtaskForm(${task.id})" style="flex: 0 0 auto;">Hủy</button>
                         </div>
                     </div>
                 </div>
@@ -557,54 +650,88 @@
             renderTasks();
         });
     }
-
+    
     function deleteTask(id) {
-        if(confirm("Bạn có chắc chắn muốn xóa Chương trình này?")) {
+        if(confirm("Bạn có chắc chắn muốn xóa Chương trình này? Toàn bộ nhiệm vụ bên trong sẽ bị xóa theo.")) {
             tasks = tasks.filter(t => t.id !== id);
             saveData();
             renderTasks();
         }
     }
 
-    function addSubtask(taskId) {
-        const title = document.getElementById(`st-title-${taskId}`).value;
-        const deadline = document.getElementById(`st-deadline-${taskId}`).value;
-        const chutri = document.getElementById(`st-chutri-${taskId}`).value;
-        const phoihop = document.getElementById(`st-phoihop-${taskId}`).value;
-        const trangthai = document.getElementById(`st-trangthai-${taskId}`).value;
-        const ketqua = document.getElementById(`st-ketqua-${taskId}`).value;
+    // --- LOGIC CHỈNH SỬA TRỰC TIẾP CHƯƠNG TRÌNH ---
+    function enableTaskEdit(taskId) {
+        editingTaskId = taskId;
+        renderTasks();
+        setTimeout(() => {
+            document.getElementById(`edit-task-title-${taskId}`).focus();
+        }, 50);
+    }
 
-        if (!title) {
-            alert("Vui lòng nhập tên nhiệm vụ cụ thể!");
-            return;
-        }
-
+    function saveTaskEdit(taskId) {
         const task = tasks.find(t => t.id === taskId);
         if (task) {
-            task.subtasks.push({
-                id: subtaskIdCounter++,
-                title: title,
-                deadline: deadline,
-                chutri: chutri,
-                phoihop: phoihop,
-                trangthai: trangthai,
-                ketqua: ketqua
-            });
-            saveData();
-            renderTasks();
+            const newTitle = document.getElementById(`edit-task-title-${taskId}`).value;
+            const fileInput = document.getElementById(`edit-task-file-${taskId}`);
+            
+            if(!newTitle.trim()) {
+                alert("Tên Chương trình không được để trống!");
+                return;
+            }
+
+            task.title = newTitle.trim();
+            
+            if (fileInput.files.length > 0) {
+                handleFileUpload(fileInput, (fileName, fileData) => {
+                    if (fileName) {
+                        task.fileName = fileName;
+                        task.fileData = fileData;
+                    }
+                    editingTaskId = null;
+                    saveData();
+                    renderTasks();
+                });
+            } else {
+                editingTaskId = null;
+                saveData();
+                renderTasks();
+            }
         }
     }
-    
-    function updateSubtask(taskId, subtaskId, field, value) {
+
+    // --- LOGIC CHỈNH SỬA TRỰC TIẾP NHIỆM VỤ CỤ THỂ ---
+    function enableSubtaskEdit(subtaskId) {
+        if (!editingSubtaskIds.includes(subtaskId)) {
+            editingSubtaskIds.push(subtaskId);
+            renderTasks();
+            setTimeout(() => {
+                document.getElementById(`edit-st-title-${subtaskId}`).focus();
+            }, 50);
+        }
+    }
+
+    function saveSubtaskEdit(taskId, subtaskId) {
         const task = tasks.find(t => t.id === taskId);
         if (task) {
             const subtask = task.subtasks.find(st => st.id === subtaskId);
             if (subtask) {
-                subtask[field] = value;
-                saveData();
-                if (field === 'deadline' || field === 'trangthai') {
-                    renderTasks(); 
+                const newTitle = document.getElementById(`edit-st-title-${subtaskId}`).value;
+                if(!newTitle.trim()) {
+                    alert("Tên Nhiệm vụ không được để trống!");
+                    return;
                 }
+                
+                subtask.title = newTitle.trim();
+                subtask.deadline = document.getElementById(`edit-st-dl-${subtaskId}`).value;
+                subtask.chutri = document.getElementById(`edit-st-ct-${subtaskId}`).value;
+                subtask.phoihop = document.getElementById(`edit-st-ph-${subtaskId}`).value;
+                subtask.trangthai = document.getElementById(`edit-st-tt-${subtaskId}`).value;
+                subtask.ketqua = document.getElementById(`edit-st-kq-${subtaskId}`).value;
+
+                // Gỡ subtask khỏi trạng thái đang chỉnh sửa
+                editingSubtaskIds = editingSubtaskIds.filter(id => id !== subtaskId);
+                saveData();
+                renderTasks(); // Lúc này sẽ tự động sort lại nếu deadline bị đổi
             }
         }
     }
@@ -617,6 +744,54 @@
                 saveData();
                 renderTasks();
             }
+        }
+    }
+
+    // --- LOGIC FORM THÊM MỚI SUBTASK ---
+    function toggleSubtaskForm(taskId) {
+        const formContainer = document.getElementById(`st-form-container-${taskId}`);
+        if (formContainer.style.display === "flex") {
+            formContainer.style.display = "none";
+        } else {
+            formContainer.style.display = "flex";
+            document.getElementById(`st-title-${taskId}`).focus();
+        }
+    }
+
+    function addSubtask(taskId) {
+        const title = document.getElementById(`st-title-${taskId}`).value;
+        const deadline = document.getElementById(`st-deadline-${taskId}`).value;
+        const chutri = document.getElementById(`st-chutri-${taskId}`).value;
+        const phoihop = document.getElementById(`st-phoihop-${taskId}`).value;
+        const trangthai = document.getElementById(`st-trangthai-${taskId}`).value;
+        const ketqua = document.getElementById(`st-ketqua-${taskId}`).value;
+
+        if (!title.trim()) {
+            alert("Vui lòng nhập tên nhiệm vụ cụ thể!");
+            return;
+        }
+
+        const task = tasks.find(t => t.id === taskId);
+        if (task) {
+            task.subtasks.push({
+                id: subtaskIdCounter++,
+                title: title.trim(),
+                deadline: deadline,
+                chutri: chutri,
+                phoihop: phoihop,
+                trangthai: trangthai,
+                ketqua: ketqua
+            });
+            saveData();
+            // Xóa rỗng form sau khi lưu
+            document.getElementById(`st-title-${taskId}`).value = '';
+            document.getElementById(`st-deadline-${taskId}`).value = '';
+            document.getElementById(`st-chutri-${taskId}`).value = '';
+            document.getElementById(`st-phoihop-${taskId}`).value = '';
+            document.getElementById(`st-ketqua-${taskId}`).value = '';
+            
+            toggleSubtaskForm(taskId); // Đóng form lại
+            renderTasks();
         }
     }
 </script>
