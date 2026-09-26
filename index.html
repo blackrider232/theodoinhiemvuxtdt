@@ -61,15 +61,23 @@
         .header h1 { color: var(--primary); text-transform: uppercase; font-size: 24px; margin-bottom: 5px; }
         .action-bar { display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center; background: var(--card-bg); padding: 10px 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);}
         
-        body.read-only-mode .btn-add,
-        body.read-only-mode .btn-edit,
-        body.read-only-mode .btn-danger,
-        body.read-only-mode .btn-success,
-        body.read-only-mode .btn-outline-secondary,
-        body.read-only-mode .btn-remove-link,
-        body.read-only-mode .task-actions,
-        body.read-only-mode .subtask-form,
-        body.read-only-mode .subtask-edit-mode { display: none !important; }
+        /* Chế độ CHUYÊN VIÊN (Chỉ xem) */
+        body.role-viewer .btn-add,
+        body.role-viewer .btn-edit,
+        body.role-viewer .btn-danger,
+        body.role-viewer .btn-success,
+        body.role-viewer .btn-outline-secondary,
+        body.role-viewer .btn-remove-link,
+        body.role-viewer .subtask-form,
+        body.role-viewer .subtask-edit-mode { display: none !important; }
+
+        /* Chế độ LÃNH ĐẠO (Chỉ duyệt, ẩn Sửa/Xóa/Thêm) */
+        body.role-manager .btn-add,
+        body.role-manager .btn-edit,
+        body.role-manager .btn-danger,
+        body.role-manager .btn-remove-link,
+        body.role-manager .subtask-form,
+        body.role-manager .subtask-edit-mode { display: none !important; }
 
         .sync-indicator { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 20px; transition: 0.3s; user-select: none;}
         .sync-indicator.synced { color: #1e8e3e; background: #e6f4ea; }
@@ -162,13 +170,14 @@
         <p style="font-size: 14px; color: #666; margin-bottom: 25px;">Vui lòng chọn chế độ truy cập</p>
         
         <div id="loginOptions">
-            <button class="btn btn-login" style="background:#17a2b8;" onclick="enterViewMode()">👁️ Vào xem tiến độ (Guest)</button>
-            <button class="btn btn-login" style="background:var(--primary);" onclick="showPasswordInput()">⚙️ Chỉnh sửa / Thêm mới (Admin)</button>
+            <button class="btn btn-login" style="background:#6c757d;" onclick="enterRole('viewer')">👁️ Chuyên viên xem tiến độ công việc</button>
+            <button class="btn btn-login" style="background:#17a2b8;" onclick="showPasswordInput('manager')">✅ Lãnh đạo phê duyệt hoàn thành</button>
+            <button class="btn btn-login" style="background:var(--primary);" onclick="showPasswordInput('admin')">⚙️ Nhập nhiệm vụ (Admin)</button>
         </div>
 
         <div id="passwordSection" style="display:none;">
             <div id="errorMsg">Mật khẩu không chính xác!</div>
-            <input type="password" id="passwordInput" placeholder="Nhập mật khẩu quản lý..." onkeypress="handleLoginPress(event)">
+            <input type="password" id="passwordInput" placeholder="Nhập mật khẩu truy cập..." onkeypress="handleLoginPress(event)">
             <div style="display:flex; gap:10px;">
                 <button class="btn btn-outline-secondary" style="flex:1; padding: 12px;" onclick="hidePasswordInput()">Quay lại</button>
                 <button class="btn btn-success" style="flex:1; padding: 12px;" onclick="checkPassword()">Xác nhận</button>
@@ -182,7 +191,7 @@
     <div class="header">
         <img src="Logo.jpg" alt="Logo SCE">
         <h1>Phần mềm Theo dõi Nhiệm vụ Xúc tiến đầu tư (SCE)</h1>
-        <p style="margin: 0; color: #666;">Tự động sắp xếp, cảnh báo & Trạng thái thông minh</p>
+        <p style="margin: 0; color: #666;" id="roleIndicatorText"></p>
     </div>
 
     <!-- Thanh công cụ & Sync Indicator -->
@@ -230,7 +239,8 @@
 
 <script>
     // === CẤU HÌNH API VÀ MẬT KHẨU ===
-    const APP_PASSWORD = "Xtdt@Sce"; 
+    const ADMIN_PASSWORD = "Xtdt@Sce"; 
+    const MANAGER_PASSWORD = "Xtdt@2026";
     const API_URL = "https://script.google.com/macros/s/AKfycbwLvbjfXT5MWVsb4Nj-EgMZO1CgdxoFN7TlFpEfXSkqnThmjd_nQzTvLAL_jRfvvVwuog/exec";
     
     let taskIdCounter = 100;
@@ -241,20 +251,34 @@
     let editingTaskId = null;
     let editingSubtaskIds = []; 
     let editingWorkIds = []; 
+    let pendingRole = '';
+
+    const initialData = [
+        {
+            id: 1,
+            title: "Triển khai đợt cao điểm 100 ngày thực hiện các nhiệm vụ trọng tâm",
+            fileLinks: [],
+            subtasks: []
+        }
+    ];
 
     window.onload = function() {
         if(sessionStorage.getItem('isLoggedIn') === 'true') showApp();
     };
 
-    function enterViewMode() {
-        sessionStorage.setItem('isLoggedIn', 'true');
-        sessionStorage.setItem('userRole', 'viewer');
-        showApp();
+    function enterRole(role) {
+        if(role === 'viewer') {
+            sessionStorage.setItem('isLoggedIn', 'true');
+            sessionStorage.setItem('userRole', 'viewer');
+            showApp();
+        }
     }
 
-    function showPasswordInput() {
+    function showPasswordInput(role) {
+        pendingRole = role;
         document.getElementById('loginOptions').style.display = 'none';
         document.getElementById('passwordSection').style.display = 'block';
+        document.getElementById('errorMsg').style.display = 'none';
         setTimeout(() => document.getElementById('passwordInput').focus(), 100);
     }
 
@@ -262,7 +286,6 @@
         document.getElementById('loginOptions').style.display = 'block';
         document.getElementById('passwordSection').style.display = 'none';
         document.getElementById('passwordInput').value = '';
-        document.getElementById('errorMsg').style.display = 'none';
     }
 
     function handleLoginPress(e) {
@@ -271,7 +294,11 @@
 
     function checkPassword() {
         const input = document.getElementById('passwordInput').value;
-        if (input === APP_PASSWORD) {
+        if (pendingRole === 'manager' && input === MANAGER_PASSWORD) {
+            sessionStorage.setItem('isLoggedIn', 'true');
+            sessionStorage.setItem('userRole', 'manager');
+            showApp();
+        } else if (pendingRole === 'admin' && input === ADMIN_PASSWORD) {
             sessionStorage.setItem('isLoggedIn', 'true');
             sessionStorage.setItem('userRole', 'admin');
             showApp();
@@ -284,15 +311,28 @@
     function showApp() {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
-        if (sessionStorage.getItem('userRole') === 'viewer') document.body.classList.add('read-only-mode');
-        else document.body.classList.remove('read-only-mode');
+        
+        const role = sessionStorage.getItem('userRole');
+        document.body.className = ''; 
+        
+        if (role === 'viewer') {
+            document.body.classList.add('role-viewer');
+            document.getElementById('roleIndicatorText').innerHTML = "Chế độ: 👁️ <b>Chuyên viên (Chỉ xem)</b>";
+        } else if (role === 'manager') {
+            document.body.classList.add('role-manager');
+            document.getElementById('roleIndicatorText').innerHTML = "Chế độ: ✅ <b>Lãnh đạo (Phê duyệt hoàn thành)</b>";
+        } else {
+            document.body.classList.add('role-admin');
+            document.getElementById('roleIndicatorText').innerHTML = "Chế độ: ⚙️ <b>Admin (Toàn quyền)</b>";
+        }
+        
         initApp(); 
     }
 
     function logout() {
         sessionStorage.removeItem('isLoggedIn');
         sessionStorage.removeItem('userRole');
-        document.body.classList.remove('read-only-mode');
+        document.body.className = '';
         document.getElementById('mainApp').style.display = 'none';
         document.getElementById('loginScreen').style.display = 'flex';
         hidePasswordInput();
@@ -318,7 +358,7 @@
                 updateSyncStatus('synced');
             } else {
                 tasks = [];
-                saveData(); 
+                if (sessionStorage.getItem('userRole') !== 'viewer') saveData(); 
             }
             migrateDataToAutoStatus(); 
             updateCounters();
@@ -326,25 +366,16 @@
         } catch (error) {
             console.error("Lỗi lấy dữ liệu:", error);
             updateSyncStatus('error');
-            const savedData = localStorage.getItem('sce_tasks_data_v4'); // Đổi key cho bản mới
+            const savedData = localStorage.getItem('sce_tasks_data_v4');
             if (savedData) {
                 tasks = JSON.parse(savedData);
                 migrateDataToAutoStatus();
                 updateCounters();
-            } else {
-                // Thử lấy data v3
-                const oldData = localStorage.getItem('sce_tasks_data_v3');
-                if (oldData) {
-                    tasks = JSON.parse(oldData);
-                    migrateDataToAutoStatus();
-                    updateCounters();
-                }
             }
             renderTasks();
         }
     }
 
-    // Chuyển đổi trạng thái string cũ sang boolean (completed)
     function migrateDataToAutoStatus() {
         tasks.forEach(t => {
             if (!t.fileLinks) t.fileLinks = [];
@@ -436,7 +467,7 @@
     }
 
     function openAddTaskModal() {
-        if (sessionStorage.getItem('userRole') === 'viewer') return;
+        if (sessionStorage.getItem('userRole') !== 'admin') return;
         document.getElementById('addTaskModal').classList.add('active');
         document.getElementById('newTaskTitle').focus();
         document.getElementById('newLinksContainer').innerHTML = ''; 
@@ -557,9 +588,8 @@
         return { text: 'Đang triển khai', bg: 'var(--info)', color: 'white', border: '#eee', group: 3 };
     }
 
-    // Tính điểm ưu tiên của Chương trình để Sắp xếp
     function getProgramPriority(task) {
-        let minGroup = 4; // 1: Quá hạn, 2: Sắp tới hạn, 3: Đang triển khai, 4: Hoàn thành / K giới hạn
+        let minGroup = 4; 
         let earliestDate = Infinity;
 
         task.subtasks.forEach(st => {
@@ -583,7 +613,6 @@
         return { group: minGroup, earliestDate: earliestDate };
     }
 
-    // --- HÀM TỰ ĐỘNG HÓA CHẠY NGẦM ---
     function processBackgroundAutomations() {
         let dataChanged = false;
         const todayTime = new Date().setHours(0,0,0,0);
@@ -595,7 +624,6 @@
             task.subtasks.forEach(st => {
                 if (!st.loaiThoiHan) st.loaiThoiHan = 'cuthe';
                 
-                // Ghi nhận ngày hoàn thành tự động
                 if (st.completed && !st.completedDate) {
                     st.completedDate = new Date().toISOString();
                     dataChanged = true;
@@ -614,7 +642,6 @@
                     }
                 });
                 
-                // Dọn dẹp sau 7 ngày
                 let keep = true;
                 if (st.completed && st.completedDate) {
                     const compTime = new Date(st.completedDate).getTime();
@@ -628,7 +655,6 @@
                 if (keep) {
                     subtasksToKeep.push(st);
                     
-                    // Sinh vòng lặp nhiệm vụ định kỳ
                     let currentForSpawn = st;
                     while(['hangtuan', 'hangthang', 'hangquy', 'hangnam'].includes(currentForSpawn.loaiThoiHan) && !currentForSpawn.spawnedNext) {
                         if (!currentForSpawn.deadline) break;
@@ -672,7 +698,6 @@
         }
     }
 
-    // Toggle Complete trực tiếp
     function toggleStComplete(taskId, subtaskId) {
         if (sessionStorage.getItem('userRole') === 'viewer') return;
         const task = tasks.find(t => t.id === taskId);
@@ -703,15 +728,13 @@
         container.innerHTML = '';
 
         if(editingTaskId === null && editingSubtaskIds.length === 0 && editingWorkIds.length === 0) {
-            // Sắp xếp Chương trình thông minh nhất
             tasks.sort((a, b) => {
                 const pA = getProgramPriority(a);
                 const pB = getProgramPriority(b);
-                if (pA.group !== pB.group) return pA.group - pB.group; // 1 (Overdue) -> 2 (Warning) -> 3 (Normal) -> 4 (Done/None)
+                if (pA.group !== pB.group) return pA.group - pB.group; 
                 return pA.earliestDate - pB.earliestDate;
             });
 
-            // Sắp xếp nội bộ Nhiệm vụ và Công việc
             tasks.forEach(task => {
                 if(task.subtasks) {
                     task.subtasks.sort((a, b) => {
@@ -793,7 +816,6 @@
                 else if(st.loaiThoiHan === 'hangquy') cycleText = 'Hàng quý';
                 else if(st.loaiThoiHan === 'hangnam') cycleText = 'Hàng năm';
 
-                // Render Works
                 let worksHTML = '';
                 if (st.works && st.works.length > 0) {
                     st.works.forEach(w => {
@@ -884,7 +906,7 @@
                                         </div>
                                         <div style="display: flex; justify-content: flex-end; gap: 5px;">
                                             <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="toggleWorkForm(${st.id})">Hủy</button>
-                                            <button class="btn btn-success" style="padding: 4px 8px; font-size: 11px;" onclick="addWork(${task.id},${st.id})">Lưu Công việc</button>
+                                            <button class="btn btn-success" style="padding: 4px 8px; font-size: 11px;" onclick="addWork(${task.id},${st.id})">Lưu</button>
                                         </div>
                                     </div>
                                 </div>
@@ -991,23 +1013,19 @@
     }
 
     function addTask() {
+        if (sessionStorage.getItem('userRole') !== 'admin') return;
         const title = document.getElementById('newTaskTitle').value;
         if (!title.trim()) { alert("Vui lòng nhập tên Chương trình / Kế hoạch!"); return; }
 
         const links = getLinksFromContainer('newLinksContainer');
-        tasks.push({
-            id: taskIdCounter++,
-            title: title.trim(),
-            fileLinks: links,
-            subtasks: []
-        });
-
+        tasks.push({ id: taskIdCounter++, title: title.trim(), fileLinks: links, subtasks: [] });
         saveData();
         renderTasks();
         closeAddTaskModal();
     }
     
     function deleteTask(id) {
+        if (sessionStorage.getItem('userRole') !== 'admin') return;
         if(confirm("Bạn có chắc chắn muốn xóa Chương trình này? Toàn bộ nhiệm vụ bên trong sẽ bị xóa theo.")) {
             tasks = tasks.filter(t => t.id !== id);
             saveData();
@@ -1016,20 +1034,20 @@
     }
 
     function enableTaskEdit(taskId) {
+        if (sessionStorage.getItem('userRole') !== 'admin') return;
         editingTaskId = taskId;
         renderTasks();
         setTimeout(() => { document.getElementById(`edit-task-title-${taskId}`).focus(); }, 50);
     }
 
     function saveTaskEdit(taskId) {
+        if (sessionStorage.getItem('userRole') !== 'admin') return;
         const task = tasks.find(t => t.id === taskId);
         if (task) {
             const newTitle = document.getElementById(`edit-task-title-${taskId}`).value;
             if(!newTitle.trim()) { alert("Tên Chương trình không được để trống!"); return; }
-
             task.title = newTitle.trim();
             task.fileLinks = getLinksFromContainer(`edit-links-container-${taskId}`);
-            
             editingTaskId = null;
             saveData();
             renderTasks();
@@ -1037,6 +1055,7 @@
     }
 
     function enableSubtaskEdit(subtaskId) {
+        if (sessionStorage.getItem('userRole') !== 'admin') return;
         if (!editingSubtaskIds.includes(subtaskId)) {
             editingSubtaskIds.push(subtaskId);
             renderTasks();
@@ -1045,6 +1064,7 @@
     }
 
     function saveSubtaskEdit(taskId, subtaskId) {
+        if (sessionStorage.getItem('userRole') !== 'admin') return;
         const task = tasks.find(t => t.id === taskId);
         if (task) {
             const subtask = task.subtasks.find(st => st.id === subtaskId);
@@ -1070,6 +1090,7 @@
     }
 
     function deleteSubtask(taskId, subtaskId) {
+        if (sessionStorage.getItem('userRole') !== 'admin') return;
         if(confirm("Xóa nhiệm vụ cụ thể này?")) {
             const task = tasks.find(t => t.id === taskId);
             if (task) {
@@ -1091,6 +1112,7 @@
     }
 
     function addSubtask(taskId) {
+        if (sessionStorage.getItem('userRole') !== 'admin') return;
         const title = document.getElementById(`st-title-${taskId}`).value;
         const loaiThoiHan = document.getElementById(`st-lth-${taskId}`).value;
         const deadline = document.getElementById(`st-deadline-${taskId}`).value;
@@ -1117,14 +1139,12 @@
                 works: []
             });
             saveData();
-            
             document.getElementById(`st-title-${taskId}`).value = '';
             document.getElementById(`st-lth-${taskId}`).value = 'cuthe';
             onLoaiThoiHanChange(document.getElementById(`st-lth-${taskId}`), `st-deadline-${taskId}`);
             document.getElementById(`st-deadline-${taskId}`).value = '';
             document.getElementById(`st-chutri-${taskId}`).value = '';
             document.getElementById(`st-ketqua-${taskId}`).value = '';
-            
             toggleSubtaskForm_ST(taskId); 
             renderTasks();
         }
@@ -1132,15 +1152,12 @@
 
     function toggleWorkForm(subtaskId) {
         const frm = document.getElementById(`work-form-${subtaskId}`);
-        if(frm.style.display === 'flex') {
-            frm.style.display = 'none';
-        } else {
-            frm.style.display = 'flex';
-            document.getElementById(`w-title-${subtaskId}`).focus();
-        }
+        if(frm.style.display === 'flex') frm.style.display = 'none';
+        else { frm.style.display = 'flex'; document.getElementById(`w-title-${subtaskId}`).focus(); }
     }
 
     function addWork(taskId, subtaskId) {
+        if (sessionStorage.getItem('userRole') !== 'admin') return;
         const title = document.getElementById(`w-title-${subtaskId}`).value;
         const ct = document.getElementById(`w-ct-${subtaskId}`).value;
         const ph = document.getElementById(`w-ph-${subtaskId}`).value;
@@ -1169,6 +1186,7 @@
     }
 
     function enableWorkEdit(workId) {
+        if (sessionStorage.getItem('userRole') !== 'admin') return;
         if(!editingWorkIds.includes(workId)) {
             editingWorkIds.push(workId);
             renderTasks();
@@ -1176,6 +1194,7 @@
     }
 
     function saveWorkEdit(taskId, subtaskId, workId) {
+        if (sessionStorage.getItem('userRole') !== 'admin') return;
         const task = tasks.find(t => t.id === taskId);
         if (task) {
             const subtask = task.subtasks.find(st => st.id === subtaskId);
@@ -1196,6 +1215,7 @@
     }
 
     function deleteWork(taskId, subtaskId, workId) {
+        if (sessionStorage.getItem('userRole') !== 'admin') return;
         if(confirm("Xóa công việc triển khai này?")) {
             const task = tasks.find(t => t.id === taskId);
             if (task) {
