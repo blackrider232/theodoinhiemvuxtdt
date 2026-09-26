@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ thống Theo dõi Nhiệm vụ Xúc tiến đầu tư - SCE</title>
+    <title>Phần mềm Theo dõi Nhiệm vụ Xúc tiến đầu tư - SCE</title>
     <style>
         :root {
             --primary: #004b87;
@@ -30,19 +30,51 @@
         
         /* Giao diện Đăng nhập */
         #loginScreen { display: flex; justify-content: center; align-items: center; height: 80vh; }
-        .login-box { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); text-align: center; width: 100%; max-width: 400px; }
-        .login-box h2 { color: var(--primary); margin-bottom: 20px; }
-        .login-box input { width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid var(--border); border-radius: 4px; font-size: 16px; box-sizing: border-box; }
-        .login-box button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; }
-        .login-box button:hover { background: #003666; }
-        #errorMsg { color: var(--danger); margin-bottom: 15px; display: none; font-size: 14px; }
+        .login-box { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; width: 100%; max-width: 420px; }
+        .login-box img { max-height: 80px; margin-bottom: 20px; object-fit: contain; }
+        .login-box h2 { color: var(--primary); margin-bottom: 10px; font-size: 22px; line-height: 1.4;}
+        .login-box input { width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid var(--border); border-radius: 6px; font-size: 15px; box-sizing: border-box; outline: none; transition: 0.2s;}
+        .login-box input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,75,135,0.1); }
+        #errorMsg { color: var(--danger); margin-bottom: 15px; display: none; font-size: 14px; background: var(--danger-bg); padding: 8px; border-radius: 4px; border: 1px solid #f5c6cb;}
+
+        /* Nút chung */
+        .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; }
+        .btn-add { background: var(--primary); }
+        .btn-add:hover { background: #003666; }
+        .btn-danger { background: var(--danger); }
+        .btn-danger:hover { background: #b32a1f; }
+        .btn-success { background: var(--success); }
+        .btn-success:hover { background: #146c2e; }
+        .btn-edit { background: var(--info); }
+        .btn-edit:hover { background: #117a8b; }
+        .btn-logout { background: #5f6368; }
+        .btn-logout:hover { background: #3c4043; }
+        .btn-attach { background: #1a73e8; padding: 4px 8px; font-size: 11px; margin-left: 10px; text-decoration: none; color: white; border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,0.2);}
+        .btn-attach:hover { background: #1557b0; }
+
+        /* Nút Đăng nhập */
+        .btn-login { width: 100%; padding: 14px; border-radius: 6px; font-size: 15px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 
         /* Giao diện Phần mềm chính */
         #mainApp { display: none; }
-        .header { text-align: center; margin-bottom: 20px; }
+        .header { display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 20px; }
+        .header img { max-height: 60px; margin-bottom: 10px; }
         .header h1 { color: var(--primary); text-transform: uppercase; font-size: 24px; margin-bottom: 5px; }
         .action-bar { display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center; background: var(--card-bg); padding: 10px 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);}
         
+        /* Chế độ Chỉ xem */
+        body.read-only-mode .btn-add,
+        body.read-only-mode .btn-edit,
+        body.read-only-mode .btn-danger,
+        body.read-only-mode .btn-success,
+        body.read-only-mode .btn-remove-link,
+        body.read-only-mode .add-form,
+        body.read-only-mode .task-actions,
+        body.read-only-mode .subtask-form,
+        body.read-only-mode .subtask-edit-mode {
+            display: none !important;
+        }
+
         /* Indicator Đồng bộ Cloud */
         .sync-indicator { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 20px; transition: 0.3s; user-select: none;}
         .sync-indicator.synced { color: #1e8e3e; background: #e6f4ea; }
@@ -55,19 +87,7 @@
         input[type="text"], input[type="password"], input[type="url"], input[type="date"], select { padding: 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 14px; outline: none; transition: 0.2s; box-sizing: border-box;}
         input[type="text"]:focus, input[type="url"]:focus, input[type="date"]:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(0,75,135,0.1); }
         
-        .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; }
-        .btn-add { background: var(--primary); }
-        .btn-add:hover { background: #003666; }
-        .btn-danger { background: var(--danger); }
-        .btn-success { background: var(--success); }
-        .btn-edit { background: var(--info); }
-        .btn-logout { background: #5f6368; }
-        .btn-logout:hover { background: #3c4043; }
-
-        /* Giao diện hiển thị Link đính kèm đa dạng */
         .file-links-display { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; width: 100%; }
-        .btn-attach { display: inline-flex; align-items: center; background: #1a73e8; padding: 4px 8px; font-size: 12px; text-decoration: none; color: white; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.2); max-width: 100%; transition: 0.2s;}
-        .btn-attach:hover { background: #1557b0; }
         .btn-attach-text { display: inline-block; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-left: 5px; }
         
         .link-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; width: 100%; }
@@ -75,8 +95,7 @@
         .link-row input[type="text"] { flex: 1; min-width: 100px; }
         .link-row input[type="url"] { flex: 2; min-width: 150px; }
         .btn-remove-link { background: var(--danger); color: white; border: none; border-radius: 4px; cursor: pointer; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: bold; }
-        .btn-remove-link:hover { background: #b32a1f; }
-
+        
         /* Popup Modal Thêm mới */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; backdrop-filter: blur(2px); }
         .modal.active { display: flex; }
@@ -145,29 +164,43 @@
 <!-- MÀN HÌNH ĐĂNG NHẬP -->
 <div id="loginScreen">
     <div class="login-box">
-        <h2>Đăng nhập Hệ thống</h2>
-        <p style="font-size: 14px; color: #666; margin-bottom: 20px;">Vui lòng nhập mật khẩu để truy cập</p>
-        <div id="errorMsg">Mật khẩu không chính xác!</div>
-        <input type="password" id="passwordInput" placeholder="Nhập mật khẩu..." onkeypress="handleLoginPress(event)">
-        <button onclick="checkPassword()">Xác nhận</button>
+        <img src="Logo.jpg" alt="Logo SCE">
+        <h2>Phần mềm theo dõi nhiệm vụ<br>Xúc tiến đầu tư</h2>
+        <p style="font-size: 14px; color: #666; margin-bottom: 25px;">Vui lòng chọn chế độ truy cập</p>
+        
+        <div id="loginOptions">
+            <button class="btn btn-login" style="background:#17a2b8;" onclick="enterViewMode()">👁️ Vào xem tiến độ (Guest)</button>
+            <button class="btn btn-login" style="background:var(--primary);" onclick="showPasswordInput()">⚙️ Chỉnh sửa / Thêm mới (Admin)</button>
+        </div>
+
+        <div id="passwordSection" style="display:none;">
+            <div id="errorMsg">Mật khẩu không chính xác!</div>
+            <input type="password" id="passwordInput" placeholder="Nhập mật khẩu quản lý..." onkeypress="handleLoginPress(event)">
+            <div style="display:flex; gap:10px;">
+                <button class="btn" style="background:#6c757d; flex:1; padding: 12px;" onclick="hidePasswordInput()">Quay lại</button>
+                <button class="btn" style="background:var(--success); flex:1; padding: 12px;" onclick="checkPassword()">Xác nhận</button>
+            </div>
+        </div>
     </div>
 </div>
 
 <!-- MÀN HÌNH PHẦN MỀM CHÍNH -->
 <div class="container" id="mainApp">
     <div class="header">
+        <img src="Logo.jpg" alt="Logo SCE">
         <h1>Phần mềm Theo dõi Nhiệm vụ Xúc tiến đầu tư (SCE)</h1>
-        <p>Hệ thống Đa cấp độ & Tự động lặp lại</p>
+        <p style="margin: 0; color: #666;">Hệ thống Đa cấp độ & Tự động lặp lại</p>
     </div>
 
     <!-- Thanh công cụ & Sync Indicator -->
     <div class="action-bar">
         <div id="syncStatusIndicator" class="sync-indicator">
-            <span id="syncIcon">☁️</span> <span id="syncText">Đang khởi tạo...</span>
+            <span id="syncIcon">☁️</span> <span id="syncText">Đang tải dữ liệu...</span>
         </div>
         <div style="display: flex; gap: 10px;">
+            <!-- Nút Tạo Mới sẽ bị ẩn nếu là Guest -->
             <button class="btn btn-add" onclick="openAddTaskModal()">➕ Tạo mới CT / KH / TBKL</button>
-            <button class="btn btn-logout" onclick="logout()">🔒 Đăng xuất</button>
+            <button class="btn btn-logout" onclick="logout()">🔒 Thoát</button>
         </div>
     </div>
 
@@ -210,12 +243,12 @@
     
     let taskIdCounter = 100;
     let subtaskIdCounter = 1000;
-    let workIdCounter = 10000; // Counter cho công việc con
+    let workIdCounter = 10000; 
     let tasks = [];
     
     let editingTaskId = null;
     let editingSubtaskIds = []; 
-    let editingWorkIds = []; // Mảng quản lý trạng thái đang sửa công việc con
+    let editingWorkIds = []; 
 
     const initialData = [
         {
@@ -245,6 +278,26 @@
         }
     };
 
+    // --- QUẢN LÝ ĐĂNG NHẬP / PHÂN QUYỀN ---
+    function enterViewMode() {
+        sessionStorage.setItem('isLoggedIn', 'true');
+        sessionStorage.setItem('userRole', 'viewer');
+        showApp();
+    }
+
+    function showPasswordInput() {
+        document.getElementById('loginOptions').style.display = 'none';
+        document.getElementById('passwordSection').style.display = 'block';
+        setTimeout(() => document.getElementById('passwordInput').focus(), 100);
+    }
+
+    function hidePasswordInput() {
+        document.getElementById('loginOptions').style.display = 'block';
+        document.getElementById('passwordSection').style.display = 'none';
+        document.getElementById('passwordInput').value = '';
+        document.getElementById('errorMsg').style.display = 'none';
+    }
+
     function handleLoginPress(e) {
         if (e.key === 'Enter') checkPassword();
     }
@@ -253,6 +306,7 @@
         const input = document.getElementById('passwordInput').value;
         if (input === APP_PASSWORD) {
             sessionStorage.setItem('isLoggedIn', 'true');
+            sessionStorage.setItem('userRole', 'admin');
             showApp();
         } else {
             document.getElementById('errorMsg').style.display = 'block';
@@ -263,15 +317,23 @@
     function showApp() {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
+        
+        if (sessionStorage.getItem('userRole') === 'viewer') {
+            document.body.classList.add('read-only-mode');
+        } else {
+            document.body.classList.remove('read-only-mode');
+        }
+        
         initApp(); 
     }
 
     function logout() {
         sessionStorage.removeItem('isLoggedIn');
+        sessionStorage.removeItem('userRole');
+        document.body.classList.remove('read-only-mode');
         document.getElementById('mainApp').style.display = 'none';
         document.getElementById('loginScreen').style.display = 'flex';
-        document.getElementById('passwordInput').value = '';
-        document.getElementById('errorMsg').style.display = 'none';
+        hidePasswordInput();
     }
 
     // === QUẢN LÝ TRẠNG THÁI ĐỒNG BỘ CLOUD ===
@@ -283,13 +345,13 @@
         ind.className = 'sync-indicator ' + state;
         if (state === 'synced') {
             icon.innerHTML = '☁️✔️';
-            text.innerHTML = 'Đã lưu trên Cloud';
+            text.innerHTML = 'Đã lưu đồng bộ';
         } else if (state === 'syncing') {
             icon.innerHTML = '☁️🔄';
-            text.innerHTML = 'Đang lưu...';
+            text.innerHTML = 'Đang tải...';
         } else if (state === 'error') {
             icon.innerHTML = '☁️⚠️';
-            text.innerHTML = 'Chưa lưu Cloud (Lưu nội bộ)';
+            text.innerHTML = 'Chưa lưu (Lưu nội bộ)';
         }
     }
 
@@ -324,7 +386,6 @@
         }
     }
 
-    // Tự động nâng cấp dữ liệu cũ lên phiên bản mới nhất
     function migrateOldData() {
         tasks.forEach(t => {
             if (t.fileLink !== undefined) {
@@ -336,7 +397,6 @@
             }
             if (!t.fileLinks) t.fileLinks = [];
 
-            // Cập nhật Subtask: Bỏ Phối hợp, Thêm Works (Các công việc)
             t.subtasks.forEach(st => {
                 if (st.phoihop !== undefined) delete st.phoihop;
                 if (!st.works) st.works = [];
@@ -345,6 +405,8 @@
     }
 
     function saveData() {
+        if (sessionStorage.getItem('userRole') === 'viewer') return;
+        
         localStorage.setItem('sce_tasks_data_v3', JSON.stringify(tasks));
         updateSyncStatus('syncing');
 
@@ -417,6 +479,7 @@
 
     // === QUẢN LÝ MODAL TẠO MỚI ===
     function openAddTaskModal() {
+        if (sessionStorage.getItem('userRole') === 'viewer') return;
         document.getElementById('addTaskModal').classList.add('active');
         document.getElementById('newTaskTitle').focus();
         document.getElementById('newLinksContainer').innerHTML = ''; 
@@ -584,7 +647,7 @@
             }
         });
         
-        if (dataChanged) {
+        if (dataChanged && sessionStorage.getItem('userRole') !== 'viewer') {
             saveData();
         }
     }
@@ -673,7 +736,6 @@
                 else if(st.loaiThoiHan === 'hangquy') cycleText = 'Hàng quý';
                 else if(st.loaiThoiHan === 'hangnam') cycleText = 'Hàng năm';
 
-                // Render Works (Các công việc triển khai)
                 let worksHTML = '';
                 if (st.works && st.works.length > 0) {
                     st.works.forEach(w => {
@@ -692,7 +754,7 @@
                                                 <span style="${isWOverdue ? 'color: var(--danger); font-weight:bold;' : ''}">📅 <strong>Hạn:</strong> ${formatDateVN(w.deadline)}</span>
                                             </div>
                                         </div>
-                                        <div style="display:flex; gap: 5px; flex-shrink: 0;">
+                                        <div class="task-actions" style="display:flex; gap: 5px; flex-shrink: 0;">
                                             <button class="btn btn-edit" style="padding: 2px 6px; font-size: 10px;" onclick="enableWorkEdit(${w.id}); event.stopPropagation();">Sửa</button>
                                             <button class="btn btn-danger" style="padding: 2px 6px; font-size: 10px;" onclick="deleteWork(${task.id}, ${st.id},${w.id}); event.stopPropagation();">Xóa</button>
                                         </div>
@@ -739,7 +801,6 @@
                                     <div><strong>Kết quả ghi nhận:</strong> ${st.ketqua || '---'}</div>
                                 </div>
                                 
-                                <!-- MỤC CÔNG VIỆC TRIỂN KHAI -->
                                 <div style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px;">
                                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                                         <strong style="font-size: 13px; color: var(--primary);">Các công việc triển khai:</strong>
@@ -748,8 +809,7 @@
                                     
                                     <div>${worksHTML}</div>
 
-                                    <!-- Form thêm công việc con -->
-                                    <div id="work-form-${st.id}" style="display:none; background:#f4f6f8; padding: 10px; border-radius: 4px; margin-top: 5px; flex-direction: column; gap: 8px; border: 1px solid #ddd;">
+                                    <div class="subtask-form" id="work-form-${st.id}" style="display:none; background:#f4f6f8; padding: 10px; border-radius: 4px; margin-top: 5px; flex-direction: column; gap: 8px; border: 1px solid #ddd;">
                                         <input type="text" id="w-title-${st.id}" placeholder="Tên công việc triển khai..." style="padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; outline:none; box-sizing: border-box;">
                                         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                                             <input type="text" id="w-ct-${st.id}" placeholder="Chủ trì" style="flex: 1; min-width: 80px; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; outline:none; box-sizing: border-box;">
@@ -1018,7 +1078,6 @@
         }
     }
 
-    // === QUẢN LÝ CÔNG VIỆC TRIỂN KHAI (WORKS - CẤP 3) ===
     function toggleWorkForm(subtaskId) {
         const frm = document.getElementById(`work-form-${subtaskId}`);
         if(frm.style.display === 'flex') {
