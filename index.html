@@ -14,6 +14,8 @@
             --danger-bg: #fff5f5;
             --success: #1e8e3e;
             --info: #17a2b8;
+            --warning: #ffb300;
+            --warning-bg: #fffbf0;
             --border: #dadce0;
         }
         body {
@@ -52,7 +54,6 @@
         .btn-attach { background: #1a73e8; padding: 4px 8px; font-size: 11px; margin-left: 10px; text-decoration: none; color: white; border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,0.2);}
         .btn-attach:hover { background: #1557b0; }
 
-        /* Nút Đăng nhập */
         .btn-login { width: 100%; padding: 14px; border-radius: 6px; font-size: 15px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 
         /* Giao diện Phần mềm chính */
@@ -68,7 +69,6 @@
         body.read-only-mode .btn-danger,
         body.read-only-mode .btn-success,
         body.read-only-mode .btn-remove-link,
-        body.read-only-mode .add-form,
         body.read-only-mode .task-actions,
         body.read-only-mode .subtask-form,
         body.read-only-mode .subtask-edit-mode {
@@ -109,29 +109,40 @@
         /* Layout Grid Nhiệm vụ */
         .task-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 20px; align-items: start; }
         .task-card { background: var(--card-bg); border-left: 5px solid var(--primary); border-radius: 6px; padding: 15px 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: all 0.3s; width: 100%; box-sizing: border-box; }
+        
+        /* Trạng thái Thẻ */
         .task-card.urgent { border-left-color: var(--danger); background-color: var(--danger-bg); }
+        .task-card.warning { border-left-color: var(--warning); background-color: var(--warning-bg); }
+        
         .task-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; gap: 10px; }
         .task-title-area { flex: 1; min-width: 0; }
         .task-title { font-size: 16px; font-weight: 600; margin: 0 0 5px 0; word-wrap: break-word;}
         .task-actions { display: flex; gap: 5px; flex-shrink: 0; }
+        
         .urgent-text { color: var(--danger); font-weight: bold; font-size: 13px;}
+        .warning-text { color: #b07d00; font-weight: bold; font-size: 13px;}
         
         .subtasks-wrapper { margin-top: 15px; border-top: 2px dashed var(--border); padding-top: 15px;}
         .subtasks-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .subtasks-header-row h4 { margin: 0; font-size: 14px; color: var(--primary); }
         
+        /* Nhiệm vụ Item */
         .subtask-item { display: flex; flex-direction: column; background: #f8f9fa; border-radius: 4px; margin-bottom: 8px; font-size: 13px; border: 1px solid #e0e0e0; transition: all 0.2s; }
         .subtask-item.subtask-overdue { border: 2px solid var(--danger); background-color: var(--danger-bg); }
+        .subtask-item.subtask-warning { border: 2px solid var(--warning); background-color: var(--warning-bg); }
         
         .subtask-summary { cursor: pointer; display: flex; flex-direction: column; gap: 8px; padding: 10px; }
         .subtask-summary:hover { background-color: #f1f3f4; }
         .st-title-sum { font-weight: 600; font-size: 14px; color: var(--primary); line-height: 1.4;}
         .st-title-sum.text-truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
         .subtask-item.subtask-overdue .st-title-sum { color: var(--danger); }
+        .subtask-item.subtask-warning .st-title-sum { color: #b07d00; }
         
         .st-meta-sum { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
         .badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; color: white; font-weight: bold; display: inline-block; }
         .bg-danger { background: var(--danger); }
+        .bg-warning { background: var(--warning); color: #000; }
         .bg-secondary { background: #6c757d; }
 
         .subtask-full-content { display: none; padding: 0 10px 10px 10px; border-top: 1px dashed #ccc; margin-top: 5px; padding-top: 10px; color: #444; }
@@ -189,7 +200,7 @@
     <div class="header">
         <img src="Logo.jpg" alt="Logo SCE">
         <h1>Phần mềm Theo dõi Nhiệm vụ Xúc tiến đầu tư (SCE)</h1>
-        <p style="margin: 0; color: #666;">Hệ thống Đa cấp độ & Tự động lặp lại</p>
+        <p style="margin: 0; color: #666;">Tự động sắp xếp mức độ khẩn cấp & Tự động lặp lại</p>
     </div>
 
     <!-- Thanh công cụ & Sync Indicator -->
@@ -486,6 +497,7 @@
         document.getElementById('newLinksContainer').innerHTML = '';
     }
 
+    // === HÀM HỖ TRỢ NGÀY THÁNG & TIÊU ĐỀ LẶP ===
     function formatDateYMD(date) {
         const y = date.getFullYear();
         const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -509,11 +521,9 @@
         return dl < today;
     }
 
-    // === HÀM XỬ LÝ TIÊU ĐỀ LẶP LẠI (THÊM HẬU TỐ) ===
     function formatRecurringTitle(title, loaiThoiHan, deadlineStr) {
         if (!deadlineStr || loaiThoiHan === 'cuthe') return title;
         
-        // Cắt bỏ hậu tố cũ (nếu có) để tránh lặp (VD: Báo cáo (Tuần...) (Tuần...))
         let cleanTitle = title.replace(/\s*\((Tuần từ|Tháng|Quý|Năm)\s+[^)]+\)$/i, '');
         let d = new Date(deadlineStr);
         let suffix = '';
@@ -595,6 +605,7 @@
         }
     }
 
+    // --- HÀM TỰ ĐỘNG HÓA CHẠY NGẦM ---
     function processBackgroundAutomations() {
         let dataChanged = false;
         const todayTime = new Date().setHours(0,0,0,0);
@@ -647,7 +658,7 @@
                             
                             let nextSt = {
                                 id: subtaskIdCounter++,
-                                title: nextTitle, // Gắn tiêu đề mới
+                                title: nextTitle,
                                 loaiThoiHan: currentForSpawn.loaiThoiHan,
                                 deadline: nextDl,
                                 chutri: currentForSpawn.chutri,
@@ -676,15 +687,6 @@
         }
     }
 
-    function isTaskUrgent(task) {
-        if (!task.subtasks || task.subtasks.length === 0) return false;
-        let urgent = false;
-        task.subtasks.forEach(st => {
-            if (st.trangthai === 'Chậm tiến độ') urgent = true;
-        });
-        return urgent;
-    }
-    
     function getEarliestDeadline(task) {
         if (!task.subtasks || task.subtasks.length === 0) return null;
         let earliest = null;
@@ -708,6 +710,7 @@
         container.innerHTML = '';
 
         if(editingTaskId === null && editingSubtaskIds.length === 0 && editingWorkIds.length === 0) {
+            // Sort Tasks
             tasks.sort((a, b) => {
                 const deadlineA = getEarliestDeadline(a);
                 const deadlineB = getEarliestDeadline(b);
@@ -716,43 +719,71 @@
                 if (!deadlineB) return -1;
                 return deadlineA - deadlineB;
             });
+
+            // Sort Subtasks within Tasks
+            tasks.forEach(task => {
+                if(task.subtasks) {
+                    task.subtasks.sort((a, b) => {
+                        if (a.trangthai === 'Đã hoàn thành' && b.trangthai !== 'Đã hoàn thành') return 1;
+                        if (a.trangthai !== 'Đã hoàn thành' && b.trangthai === 'Đã hoàn thành') return -1;
+                        
+                        const dA = a.deadline ? new Date(a.deadline).getTime() : Infinity;
+                        const dB = b.deadline ? new Date(b.deadline).getTime() : Infinity;
+                        return dA - dB;
+                    });
+                }
+                
+                // Sort Works within Subtasks
+                if(task.subtasks) {
+                    task.subtasks.forEach(st => {
+                        if(st.works) {
+                            st.works.sort((wa, wb) => {
+                                const dWA = wa.deadline ? new Date(wa.deadline).getTime() : Infinity;
+                                const dWB = wb.deadline ? new Date(wb.deadline).getTime() : Infinity;
+                                return dWA - dWB;
+                            });
+                        }
+                    });
+                }
+            });
         }
 
         tasks.forEach(task => {
             const isTaskEditing = editingTaskId === task.id;
-            const taskCardClass = `task-card ${isTaskUrgent(task) ? 'urgent' : ''} ${isTaskEditing ? 'is-editing' : ''}`;
-            const urgentText = isTaskUrgent(task) ? '<span class="urgent-text">⚠️ Có nhiệm vụ chậm tiến độ</span>' : '';
-
-            let fileHtml = '';
-            let editLinksHtml = '';
-            if (task.fileLinks && task.fileLinks.length > 0) {
-                fileHtml = '<div class="file-links-display">';
-                task.fileLinks.forEach(link => {
-                    let href = link.url.trim();
-                    if(href && !href.startsWith('http://') && !href.startsWith('https://')) href = 'https://' + href;
-                    fileHtml += `<a href="${href}" target="_blank" class="btn-attach" title="${link.url}">🔗<span class="btn-attach-text">${link.name}</span></a>`;
-                    
-                    editLinksHtml += `
-                        <div class="link-row">
-                            <input type="text" class="link-name" placeholder="Tên tóm tắt" value="${link.name}">
-                            <input type="url" class="link-url" placeholder="Dán link..." value="${link.url}">
-                            <button type="button" class="btn-remove-link" onclick="this.parentElement.remove()" title="Xóa link">✕</button>
-                        </div>
-                    `;
-                });
-                fileHtml += '</div>';
-            }
+            
+            // Xác định tổng thể Task có bị Quá hạn hay Sắp đến hạn không
+            let hasOverdueTask = false;
+            let hasNearingTask = false;
 
             let subtasksHTML = '';
             task.subtasks.forEach(st => {
                 const isSubtaskEditing = editingSubtaskIds.includes(st.id);
+                
                 const isOverdueState = (st.trangthai === 'Chậm tiến độ');
-                const stClass = `subtask-item ${isSubtaskEditing ? 'is-editing' : ''} ${isOverdueState ? 'subtask-overdue' : ''}`;
+                let isNearingState = false;
+                
+                if (st.trangthai !== 'Đã hoàn thành' && st.trangthai !== 'Chậm tiến độ' && st.deadline) {
+                    const dlTime = new Date(st.deadline).setHours(0,0,0,0);
+                    const todayTime = new Date().setHours(0,0,0,0);
+                    const diffDays = Math.round((dlTime - todayTime) / (1000 * 3600 * 24));
+                    if (diffDays >= 0 && diffDays <= 2) {
+                        isNearingState = true;
+                    }
+                }
+
+                if (isOverdueState) hasOverdueTask = true;
+                if (isNearingState) hasNearingTask = true;
+                
+                const stClass = `subtask-item ${isSubtaskEditing ? 'is-editing' : ''} ${isOverdueState ? 'subtask-overdue' : ''} ${isNearingState ? 'subtask-warning' : ''}`;
                 
                 let statusColor = '#6c757d'; 
                 if(st.trangthai === 'Đã hoàn thành') statusColor = '#1e8e3e';
                 else if(st.trangthai === 'Đang thực hiện') statusColor = '#17a2b8';
                 else if(st.trangthai === 'Chậm tiến độ') statusColor = '#d93025';
+
+                let badgeClass = 'bg-secondary';
+                if (isOverdueState) badgeClass = 'bg-danger';
+                else if (isNearingState) badgeClass = 'bg-warning';
 
                 let cycleText = 'Cụ thể';
                 if(st.loaiThoiHan === 'hangtuan') cycleText = 'Thứ 6 hàng tuần';
@@ -766,22 +797,43 @@
                     st.works.forEach(w => {
                         const isWorkEditing = editingWorkIds.includes(w.id);
                         const isWOverdue = isOverdue(w.deadline);
+                        let isWNearing = false;
+                        
+                        if (!isWOverdue && w.deadline) {
+                            const wDlTime = new Date(w.deadline).setHours(0,0,0,0);
+                            const wDiff = Math.round((wDlTime - new Date().setHours(0,0,0,0)) / (1000 * 3600 * 24));
+                            if (wDiff >= 0 && wDiff <= 2) isWNearing = true;
+                        }
+
+                        let wBorderColor = '#eee';
+                        let wTitleColor = '#333';
+                        let wDateColor = '#666';
+                        
+                        if (isWOverdue) {
+                            wBorderColor = 'var(--danger)';
+                            wTitleColor = 'var(--danger)';
+                            wDateColor = 'var(--danger)';
+                        } else if (isWNearing) {
+                            wBorderColor = 'var(--warning)';
+                            wTitleColor = '#b07d00';
+                            wDateColor = '#b07d00';
+                        }
                         
                         worksHTML += `
-                            <div style="background: white; border: 1px solid ${isWOverdue ? 'var(--danger)' : '#eee'}; padding: 8px; margin-bottom: 5px; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                            <div style="background: white; border: 2px solid ${wBorderColor}; padding: 8px; margin-bottom: 5px; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
                                 ${!isWorkEditing ? `
                                     <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
                                         <div style="flex:1;">
-                                            <div style="font-weight: 600; font-size: 13px; color: ${isWOverdue ? 'var(--danger)' : '#333'}; margin-bottom: 4px;">- ${w.title}</div>
+                                            <div style="font-weight: 600; font-size: 13px; color: ${wTitleColor}; margin-bottom: 4px;">- ${w.title}</div>
                                             <div style="font-size: 11px; color: #666; display: flex; flex-wrap: wrap; gap: 8px;">
                                                 <span>👤 <strong>Chủ trì:</strong> ${w.chutri || '---'}</span> 
                                                 <span>👥 <strong>Phối hợp:</strong> ${w.phoihop || '---'}</span> 
-                                                <span style="${isWOverdue ? 'color: var(--danger); font-weight:bold;' : ''}">📅 <strong>Hạn:</strong> ${formatDateVN(w.deadline)}</span>
+                                                <span style="color: ${wDateColor}; font-weight:bold;">📅 <strong>Hạn:</strong> ${formatDateVN(w.deadline)}</span>
                                             </div>
                                         </div>
                                         <div class="task-actions" style="display:flex; gap: 5px; flex-shrink: 0;">
                                             <button class="btn btn-edit" style="padding: 2px 6px; font-size: 10px;" onclick="enableWorkEdit(${w.id}); event.stopPropagation();">Sửa</button>
-                                            <button class="btn btn-danger" style="padding: 2px 6px; font-size: 10px;" onclick="deleteWork(${task.id}, ${st.id},${w.id}); event.stopPropagation();">Xóa</button>
+                                            <button class="btn btn-danger" style="padding: 2px 6px; font-size: 10px;" onclick="deleteWork(${task.id}, ${st.id}, ${w.id}); event.stopPropagation();">Xóa</button>
                                         </div>
                                     </div>
                                 ` : `
@@ -808,10 +860,10 @@
                     <div class="${stClass}">
                         ${!isSubtaskEditing ? `
                             <div class="subtask-summary" onclick="toggleExpand(this)">
-                                <div class="st-title-sum text-truncate">▶ ${st.title}</div>
+                                <div class="st-title-sum text-truncate">${isNearingState ? '⏳' : '▶'} ${st.title}</div>
                                 <div class="st-meta-sum">
                                     <span class="badge" style="background:${statusColor}">${st.trangthai}</span>
-                                    <span class="badge ${isOverdueState ? 'bg-danger' : 'bg-secondary'}">📅 Hạn: ${formatDateVN(st.deadline)}</span>
+                                    <span class="badge ${badgeClass}">📅 Hạn: ${formatDateVN(st.deadline)}</span>
                                 </div>
                             </div>
                             
@@ -893,8 +945,41 @@
                 `;
             });
 
+            // Xác định Theme cho thẻ ngoài cùng
+            let taskStateClass = '';
+            let taskStateText = '';
+            if (hasOverdueTask) {
+                taskStateClass = 'urgent';
+                taskStateText = '<span class="urgent-text">⚠️ Có nhiệm vụ quá hạn / chậm tiến độ</span>';
+            } else if (hasNearingTask) {
+                taskStateClass = 'warning';
+                taskStateText = '<span class="warning-text">⏳ Có nhiệm vụ sắp đến hạn (≤ 2 ngày)</span>';
+            }
+
+            const taskCardFullClass = `task-card ${taskStateClass} ${isTaskEditing ? 'is-editing' : ''}`;
+
+            let fileHtml = '';
+            let editLinksHtml = '';
+            if (task.fileLinks && task.fileLinks.length > 0) {
+                fileHtml = '<div class="file-links-display">';
+                task.fileLinks.forEach(link => {
+                    let href = link.url.trim();
+                    if(href && !href.startsWith('http://') && !href.startsWith('https://')) href = 'https://' + href;
+                    fileHtml += `<a href="${href}" target="_blank" class="btn-attach" title="${link.url}">🔗<span class="btn-attach-text">${link.name}</span></a>`;
+                    
+                    editLinksHtml += `
+                        <div class="link-row">
+                            <input type="text" class="link-name" placeholder="Tên tóm tắt" value="${link.name}">
+                            <input type="url" class="link-url" placeholder="Dán link..." value="${link.url}">
+                            <button type="button" class="btn-remove-link" onclick="this.parentElement.remove()" title="Xóa link">✕</button>
+                        </div>
+                    `;
+                });
+                fileHtml += '</div>';
+            }
+
             const card = document.createElement('div');
-            card.className = taskCardClass;
+            card.className = taskCardFullClass;
             card.innerHTML = `
                 <div class="task-header">
                     <div class="hide-in-edit" style="width: 100%; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
@@ -919,7 +1004,7 @@
                     </div>
                 </div>
                 <div class="task-meta">
-                    ${urgentText}
+                    ${taskStateText}
                 </div>
                 
                 <div class="subtasks-wrapper">
