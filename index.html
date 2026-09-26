@@ -125,7 +125,7 @@
         
         .subtask-summary { cursor: pointer; display: flex; flex-direction: column; gap: 8px; padding: 10px; }
         .subtask-summary:hover { background-color: #f1f3f4; }
-        .st-title-sum { font-weight: 600; font-size: 14px; color: var(--primary); }
+        .st-title-sum { font-weight: 600; font-size: 14px; color: var(--primary); line-height: 1.4;}
         .st-title-sum.text-truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .subtask-item.subtask-overdue .st-title-sum { color: var(--danger); }
         
@@ -198,7 +198,6 @@
             <span id="syncIcon">☁️</span> <span id="syncText">Đang tải dữ liệu...</span>
         </div>
         <div style="display: flex; gap: 10px;">
-            <!-- Nút Tạo Mới sẽ bị ẩn nếu là Guest -->
             <button class="btn btn-add" onclick="openAddTaskModal()">➕ Tạo mới CT / KH / TBKL</button>
             <button class="btn btn-logout" onclick="logout()">🔒 Thoát</button>
         </div>
@@ -278,7 +277,6 @@
         }
     };
 
-    // --- QUẢN LÝ ĐĂNG NHẬP / PHÂN QUYỀN ---
     function enterViewMode() {
         sessionStorage.setItem('isLoggedIn', 'true');
         sessionStorage.setItem('userRole', 'viewer');
@@ -336,7 +334,6 @@
         hidePasswordInput();
     }
 
-    // === QUẢN LÝ TRẠNG THÁI ĐỒNG BỘ CLOUD ===
     function updateSyncStatus(state) {
         const ind = document.getElementById('syncStatusIndicator');
         const icon = document.getElementById('syncIcon');
@@ -355,7 +352,6 @@
         }
     }
 
-    // === KẾT NỐI GOOGLE SHEETS ===
     async function initApp() {
         updateSyncStatus('syncing');
         try {
@@ -433,7 +429,6 @@
         });
     }
 
-    // === QUẢN LÝ NHIỀU LINK ĐÍNH KÈM ===
     function addLinkRow(containerId, name = '', url = '') {
         const container = document.getElementById(containerId);
         const row = document.createElement('div');
@@ -477,7 +472,6 @@
         return links;
     }
 
-    // === QUẢN LÝ MODAL TẠO MỚI ===
     function openAddTaskModal() {
         if (sessionStorage.getItem('userRole') === 'viewer') return;
         document.getElementById('addTaskModal').classList.add('active');
@@ -492,7 +486,6 @@
         document.getElementById('newLinksContainer').innerHTML = '';
     }
 
-    // === HÀM HỖ TRỢ NGÀY THÁNG ===
     function formatDateYMD(date) {
         const y = date.getFullYear();
         const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -514,6 +507,36 @@
         const dl = new Date(dateStr).setHours(0,0,0,0);
         const today = new Date().setHours(0,0,0,0);
         return dl < today;
+    }
+
+    // === HÀM XỬ LÝ TIÊU ĐỀ LẶP LẠI (THÊM HẬU TỐ) ===
+    function formatRecurringTitle(title, loaiThoiHan, deadlineStr) {
+        if (!deadlineStr || loaiThoiHan === 'cuthe') return title;
+        
+        // Cắt bỏ hậu tố cũ (nếu có) để tránh lặp (VD: Báo cáo (Tuần...) (Tuần...))
+        let cleanTitle = title.replace(/\s*\((Tuần từ|Tháng|Quý|Năm)\s+[^)]+\)$/i, '');
+        let d = new Date(deadlineStr);
+        let suffix = '';
+        
+        if (loaiThoiHan === 'hangtuan') {
+            let day = d.getDay();
+            let diffToMon = day === 0 ? -6 : 1 - day;
+            let mon = new Date(d); mon.setDate(d.getDate() + diffToMon);
+            let sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+            
+            let monStr = String(mon.getDate()).padStart(2, '0') + '/' + String(mon.getMonth() + 1).padStart(2, '0');
+            let sunStr = String(sun.getDate()).padStart(2, '0') + '/' + String(sun.getMonth() + 1).padStart(2, '0') + '/' + sun.getFullYear();
+            suffix = ` (Tuần từ ${monStr} đến ${sunStr})`;
+        } else if (loaiThoiHan === 'hangthang') {
+            suffix = ` (Tháng ${d.getMonth() + 1}/${d.getFullYear()})`;
+        } else if (loaiThoiHan === 'hangquy') {
+            let q = Math.floor(d.getMonth() / 3) + 1;
+            suffix = ` (Quý ${q}/${d.getFullYear()})`;
+        } else if (loaiThoiHan === 'hangnam') {
+            suffix = ` (Năm ${d.getFullYear()})`;
+        }
+        
+        return cleanTitle + suffix;
     }
 
     function getPeriodEnd(dateObj, type) {
@@ -572,7 +595,6 @@
         }
     }
 
-    // --- HÀM TỰ ĐỘNG HÓA CHẠY NGẦM ---
     function processBackgroundAutomations() {
         let dataChanged = false;
         const todayTime = new Date().setHours(0,0,0,0);
@@ -621,9 +643,11 @@
                             dataChanged = true;
                             
                             const nextDl = getNextPeriodEnd(currentForSpawn.deadline, currentForSpawn.loaiThoiHan);
+                            const nextTitle = formatRecurringTitle(currentForSpawn.title, currentForSpawn.loaiThoiHan, nextDl);
+                            
                             let nextSt = {
                                 id: subtaskIdCounter++,
-                                title: currentForSpawn.title,
+                                title: nextTitle, // Gắn tiêu đề mới
                                 loaiThoiHan: currentForSpawn.loaiThoiHan,
                                 deadline: nextDl,
                                 chutri: currentForSpawn.chutri,
@@ -736,6 +760,7 @@
                 else if(st.loaiThoiHan === 'hangquy') cycleText = 'Hàng quý';
                 else if(st.loaiThoiHan === 'hangnam') cycleText = 'Hàng năm';
 
+                // Render Works
                 let worksHTML = '';
                 if (st.works && st.works.length > 0) {
                     st.works.forEach(w => {
@@ -1000,9 +1025,9 @@
                 const newTitle = document.getElementById(`edit-st-title-${subtaskId}`).value;
                 if(!newTitle.trim()) { alert("Tên Nhiệm vụ không được để trống!"); return; }
                 
-                subtask.title = newTitle.trim();
                 subtask.loaiThoiHan = document.getElementById(`edit-st-lth-${subtaskId}`).value;
                 subtask.deadline = document.getElementById(`edit-st-dl-${subtaskId}`).value;
+                subtask.title = formatRecurringTitle(newTitle.trim(), subtask.loaiThoiHan, subtask.deadline);
                 subtask.chutri = document.getElementById(`edit-st-ct-${subtaskId}`).value;
                 subtask.trangthai = document.getElementById(`edit-st-tt-${subtaskId}`).value;
                 subtask.ketqua = document.getElementById(`edit-st-kq-${subtaskId}`).value;
@@ -1050,11 +1075,13 @@
         if (!title.trim()) { alert("Vui lòng nhập tên nhiệm vụ cụ thể!"); return; }
         if (!deadline) { alert("Vui lòng chọn thời hạn hoàn thành!"); return; }
 
+        const formattedTitle = formatRecurringTitle(title.trim(), loaiThoiHan, deadline);
+
         const task = tasks.find(t => t.id === taskId);
         if (task) {
             task.subtasks.push({
                 id: subtaskIdCounter++,
-                title: title.trim(),
+                title: formattedTitle,
                 loaiThoiHan: loaiThoiHan,
                 deadline: deadline,
                 chutri: chutri,
