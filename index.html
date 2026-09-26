@@ -345,12 +345,22 @@
         document.getElementById('newTaskLink').value = '';
     }
 
-    // === HÀM HỖ TRỢ NGÀY THÁNG LẶP LẠI ===
+    // === HÀM HỖ TRỢ NGÀY THÁNG ===
     function formatDateYMD(date) {
         const y = date.getFullYear();
         const m = String(date.getMonth() + 1).padStart(2, '0');
         const d = String(date.getDate()).padStart(2, '0');
         return `${y}-${m}-${d}`;
+    }
+    
+    // Hàm format hiển thị dd/mm/yyyy
+    function formatDateVN(dateStr) {
+        if (!dateStr) return '';
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+        return dateStr;
     }
 
     function getPeriodEnd(dateObj, type) {
@@ -570,7 +580,7 @@
                                 <div class="st-title-sum text-truncate">▶ ${st.title}</div>
                                 <div class="st-meta-sum">
                                     <span class="badge" style="background:${statusColor}">${st.trangthai}</span>
-                                    <span class="badge ${isOverdue ? 'bg-danger' : 'bg-secondary'}">📅 Hạn: ${st.deadline}</span>
+                                    <span class="badge ${isOverdue ? 'bg-danger' : 'bg-secondary'}">📅 Hạn: ${formatDateVN(st.deadline)}</span>
                                 </div>
                             </div>
                             
@@ -580,9 +590,9 @@
                                     <button class="btn btn-danger" onclick="deleteSubtask(${task.id},${st.id})">Xóa</button>
                                 </div>
                                 <div style="display: grid; gap: 8px;">
-                                    <div><strong>Đơn vị Chủ trì:</strong> ${st.chutri || '---'}</div>
-                                    <div><strong>Đơn vị Phối hợp:</strong> ${st.phoihop || '---'}</div>
-                                    <div><strong>Loại lặp thời hạn:</strong> ${cycleText}</div>
+                                    <div><strong>Chủ trì:</strong> ${st.chutri || '---'}</div>
+                                    <div><strong>Phối hợp:</strong> ${st.phoihop || '---'}</div>
+                                    <div><strong>Thời hạn:</strong> ${cycleText}</div>
                                     <div><strong>Kết quả ghi nhận:</strong> ${st.ketqua || '---'}</div>
                                 </div>
                             </div>
@@ -591,7 +601,7 @@
                                 <input type="text" id="edit-st-title-${st.id}" class="subtask-title-input" value="${st.title}">
                                 <div class="subtask-details">
                                     <div class="detail-item">
-                                        <label style="font-size: 11px;">Loại lặp</label>
+                                        <label style="font-size: 11px;">Thời hạn</label>
                                         <select id="edit-st-lth-${st.id}" class="detail-input editing" onchange="onLoaiThoiHanChange(this, 'edit-st-dl-${st.id}')">
                                             <option value="cuthe" ${st.loaiThoiHan === 'cuthe' ? 'selected' : ''}>Cụ thể</option>
                                             <option value="hangtuan" ${st.loaiThoiHan === 'hangtuan' ? 'selected' : ''}>Hàng tuần (Thứ 6)</option>
@@ -601,7 +611,7 @@
                                         </select>
                                     </div>
                                     <div class="detail-item">
-                                        <label style="font-size: 11px;">Thời hạn</label>
+                                        <label style="font-size: 11px;">Ngày hạn chót</label>
                                         <input type="date" id="edit-st-dl-${st.id}" class="detail-input editing" value="${st.deadline}" ${st.loaiThoiHan !== 'cuthe' ? 'style="pointer-events:none; background:#eee;"' : ''}>
                                     </div>
                                     <div class="detail-item">
@@ -671,6 +681,7 @@
                     
                     ${subtasksHTML}
                     
+                    <!-- Form thêm mới -->
                     <div class="subtask-form" id="st-form-container-${task.id}">
                         <div style="font-weight:bold; font-size:13px; color:var(--primary); margin-bottom:5px;">Tạo Nhiệm vụ cụ thể mới:</div>
                         <div class="form-row">
@@ -684,7 +695,7 @@
                                 <option value="hangquy">Hàng quý</option>
                                 <option value="hangnam">Hàng năm</option>
                             </select>
-                            <input type="date" id="st-deadline-${task.id}" title="Thời hạn">
+                            <input type="date" id="st-deadline-${task.id}">
                             <input type="text" id="st-chutri-${task.id}" placeholder="Chủ trì">
                             <input type="text" id="st-phoihop-${task.id}" placeholder="Phối hợp">
                             <select id="st-trangthai-${task.id}">
