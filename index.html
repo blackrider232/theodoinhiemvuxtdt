@@ -34,21 +34,43 @@
             margin: 0 auto;
         }
 
-        /* Nút chung */
-        .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; color: white; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; gap: 5px; text-shadow: 0 1px 1px rgba(0,0,0,0.15);}
+        /* TONE MÀU NÚT SÁNG HƠN (PASTEL SÁNG) - CHỮ ĐEN */
+        .btn { 
+            padding: 8px 16px; 
+            border: 1px solid rgba(0,0,0,0.15); 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            color: #000; 
+            transition: all 0.2s ease; 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 13px; 
+            gap: 5px; 
+        }
         .btn:active { transform: translateY(1px); }
-        .btn-add { background: var(--primary); }
-        .btn-add:hover { background: var(--primary-hover); box-shadow: 0 3px 8px rgba(0,75,135,0.25);}
-        .btn-danger { background: var(--danger); }
-        .btn-danger:hover { background: #96281b; box-shadow: 0 3px 8px rgba(192,57,43,0.25);}
-        .btn-success { background: var(--success); }
-        .btn-success:hover { background: #146c2e; box-shadow: 0 3px 8px rgba(30,142,62,0.25);}
-        .btn-edit { background: var(--info); }
-        .btn-edit:hover { background: #014c78; box-shadow: 0 3px 8px rgba(2,106,167,0.25);}
-        .btn-logout { background: #5f6368; }
-        .btn-logout:hover { background: #3c4043; }
-        .btn-attach { background: #1a73e8; padding: 4px 10px; font-size: 12px; font-weight: normal; margin-left: 10px; text-decoration: none; color: white; border-radius: 4px; transition: 0.2s;}
-        .btn-attach:hover { background: #1557b0; box-shadow: 0 2px 4px rgba(26,115,232,0.3);}
+        
+        .btn-add { background-color: #e7f5ff; border-color: #74c0fc; } 
+        .btn-add:hover { background-color: #d0ebff; box-shadow: 0 3px 8px rgba(116,192,252,0.3);}
+        
+        .btn-danger { background-color: #fff5f5; border-color: #ffa8a8; } 
+        .btn-danger:hover { background-color: #ffe3e3; box-shadow: 0 3px 8px rgba(255,168,168,0.3);}
+        
+        .btn-success { background-color: #ebfbee; border-color: #8ce99a; } 
+        .btn-success:hover { background-color: #d3f9d8; box-shadow: 0 3px 8px rgba(140,233,154,0.3);}
+        
+        .btn-edit { background-color: #fff9db; border-color: #fcc419; } 
+        .btn-edit:hover { background-color: #fff3bf; box-shadow: 0 3px 8px rgba(252,196,25,0.3);}
+        
+        .btn-info { background-color: #e6fcf5; border-color: #63e6be; } 
+        .btn-info:hover { background-color: #c3fae8; box-shadow: 0 3px 8px rgba(99,230,190,0.3);}
+        
+        .btn-logout { background-color: #f8f9fa; border-color: #ced4da; } 
+        .btn-logout:hover { background-color: #e9ecef; box-shadow: 0 3px 8px rgba(0,0,0,0.1);}
+        
+        .btn-attach { background-color: #f3f0ff; border: 1px solid #b197fc; padding: 4px 10px; font-size: 12px; font-weight: 600; margin-left: 10px; text-decoration: none; color: #000; border-radius: 4px; transition: 0.2s;}
+        .btn-attach:hover { background-color: #e5dbff; box-shadow: 0 2px 4px rgba(177,151,252,0.3);}
 
         /* Giao diện Header & ActionBar */
         #mainApp { display: block; }
@@ -59,14 +81,14 @@
         
         /* Indicator Đồng bộ Cloud */
         .sync-indicator { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; padding: 6px 14px; border-radius: 20px; transition: 0.3s; user-select: none;}
-        .sync-indicator.synced { color: var(--success); background: var(--success-bg); border: 1px solid #bce4c8;}
-        .sync-indicator.syncing { color: #b07d00; background: #fff8e1; border: 1px solid #f6e6b3;}
-        .sync-indicator.error { color: var(--danger); background: var(--danger-bg); border: 1px solid #f5c6cb;}
+        .sync-indicator.synced { color: #000; background: #ebfbee; border: 1px solid #8ce99a;}
+        .sync-indicator.syncing { color: #000; background: #fff9db; border: 1px solid #fcc419;}
+        .sync-indicator.error { color: #000; background: #fff5f5; border: 1px solid #ffa8a8;}
         @keyframes spin { 100% { transform: rotate(360deg); } }
         .sync-indicator.syncing #syncIcon { display: inline-block; animation: spin 1.5s linear infinite; }
         
         /* Inputs & Form */
-        input[type="text"], input[type="password"], input[type="url"], input[type="date"], select { padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; outline: none; transition: 0.2s; box-sizing: border-box; background: #fff;}
+        input[type="text"], input[type="password"], input[type="url"], input[type="date"], select { padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; outline: none; transition: 0.2s; box-sizing: border-box; background: #fff; color: #000;}
         input[type="text"]:focus, input[type="password"]:focus, input[type="url"]:focus, input[type="date"]:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,75,135,0.1); }
         
         .file-links-display { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; width: 100%; }
@@ -75,8 +97,8 @@
         .link-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; width: 100%; }
         .link-row input[type="text"] { flex: 1; min-width: 100px; }
         .link-row input[type="url"] { flex: 2; min-width: 150px; }
-        .btn-remove-link { background: var(--danger); color: white; border: none; border-radius: 6px; cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-weight: bold; transition: 0.2s;}
-        .btn-remove-link:hover { background: #96281b; }
+        .btn-remove-link { background-color: #fff5f5; color: #000; border: 1px solid #ffa8a8; border-radius: 6px; cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-weight: bold; transition: 0.2s;}
+        .btn-remove-link:hover { background-color: #ffe3e3; }
         
         /* Modal Popup */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.55); align-items: center; justify-content: center; backdrop-filter: blur(4px); }
@@ -135,11 +157,14 @@
         .subtask-item.subtask-completed .st-title-sum { color: var(--success); text-decoration: line-through;}
         
         .st-meta-sum { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-        .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; color: white; font-weight: 700; display: inline-block; letter-spacing: 0.3px;}
-        .bg-danger { background: var(--danger); }
-        .bg-warning { background: var(--warning); }
-        .bg-success { background: var(--success); }
-        .bg-secondary { background: var(--text-muted); }
+        
+        /* HUY HIỆU PASTEL SÁNG, CHỮ ĐEN */
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; color: #000; font-weight: 700; display: inline-block; letter-spacing: 0.3px; border: 1px solid rgba(0,0,0,0.1); }
+        .bg-danger { background: #ffe3e3; }
+        .bg-warning { background: #ffec99; }
+        .bg-success { background: #d3f9d8; }
+        .bg-secondary { background: #f1f3f5; }
+        .bg-info { background: #d0ebff; }
 
         .subtask-full-content { display: none; padding: 15px; color: var(--text-main); background: #fff;}
         .subtask-item.expanded .subtask-full-content { display: block; }
@@ -205,7 +230,7 @@
                 <input type="text" id="usernameInput" placeholder="Tên tài khoản..." onkeypress="if(event.key === 'Enter') processLogin()">
                 <input type="password" id="passwordInput" placeholder="Mật khẩu..." onkeypress="if(event.key === 'Enter') processLogin()">
                 <div style="text-align: left; font-size: 13px; margin-top: -5px; margin-bottom: 5px;">
-                    <label style="cursor: pointer; display: flex; align-items: center; gap: 5px;"><input type="checkbox" id="rememberMe" checked> Ghi nhớ đăng nhập</label>
+                    <label style="cursor: pointer; display: flex; align-items: center; gap: 5px; color: #000;"><input type="checkbox" id="rememberMe" checked> Ghi nhớ đăng nhập</label>
                 </div>
                 <button class="btn btn-success" style="width: 100%; padding: 12px; font-size: 15px;" onclick="processLogin()">Đăng nhập Hệ thống</button>
             </div>
@@ -276,7 +301,7 @@
             <div class="form-group">
                 <label>Tài liệu / Link đính kèm</label>
                 <div id="newLinksContainer" style="display: flex; flex-direction: column; gap: 8px;"></div>
-                <button type="button" class="btn btn-edit" style="align-self: flex-start; margin-top: 5px; font-size: 11px; padding: 6px 10px;" onclick="addLinkRow('newLinksContainer')">➕ Thêm link</button>
+                <button type="button" class="btn btn-info" style="align-self: flex-start; margin-top: 5px; font-size: 11px; padding: 6px 10px;" onclick="addLinkRow('newLinksContainer')">➕ Thêm link mới</button>
             </div>
             <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee;">
                 <button class="btn btn-danger" onclick="closeTaskModal()">Hủy bỏ</button>
@@ -628,7 +653,7 @@
 
     function formatDateYMD(date) { const y = date.getFullYear(); const m = String(date.getMonth() + 1).padStart(2, '0'); const d = String(date.getDate()).padStart(2, '0'); return `${y}-${m}-${d}`; }
     
-    // Ép buộc định dạng dd/mm/yyyy an toàn
+    // Ép buộc định dạng dd/mm/yyyy an toàn, luôn in ra chữ đen ở span bên ngoài hàm
     function formatDateVN(dateStr) { 
         if (!dateStr) return ''; 
         if (dateStr.includes('T')) dateStr = dateStr.split('T')[0];
@@ -885,10 +910,10 @@
                     worksHTML = `<div class="work-list-container">`;
                     st.works.forEach(w => {
                         const wWeight = getWorkWeight(w);
-                        let wClass = 'work-item'; let wTitleColor = 'var(--text-main)'; let wDateColor = 'var(--text-muted)';
+                        let wClass = 'work-item'; let wTitleColor = 'var(--text-main)'; 
                         if (w.trangthai !== 'Đã hoàn thành') {
-                            if (wWeight === 1) { wClass += ' work-overdue'; wTitleColor = 'var(--danger)'; wDateColor = 'var(--danger)'; } 
-                            else if (wWeight === 1.5) { wClass += ' work-warning'; wTitleColor = 'var(--warning)'; wDateColor = 'var(--warning)'; }
+                            if (wWeight === 1) { wClass += ' work-overdue'; wTitleColor = 'var(--danger)'; } 
+                            else if (wWeight === 1.5) { wClass += ' work-warning'; wTitleColor = '#d35400'; }
                         } else { wClass += ' work-completed'; }
 
                         const isWorkLead = (currentUser && currentUser === w.chutri);
@@ -914,7 +939,7 @@
                                             <strong>Chủ trì:</strong> <span>${w.chutri || '---'}</span> 
                                             <strong>Phối hợp:</strong> <span>${w.phoihop || '---'}</span> 
                                             <strong>Trạng thái:</strong> <span style="font-weight:600; color: ${w.trangthai === 'Đã hoàn thành' ? 'var(--success)' : 'inherit'}">${w.trangthai || 'Chưa thực hiện'}</span>
-                                            <strong>Hạn chót:</strong> <span style="color: ${wDateColor}; font-weight:700;">${formatDateVN(w.deadline)}</span>
+                                            <strong>Hạn chót:</strong> <span style="color: #000; font-weight:700;">${formatDateVN(w.deadline)}</span>
                                         </div>
                                     </div>
                                     <div class="task-actions" style="display:flex; gap: 5px; flex-shrink: 0;">${workActionsHTML}</div>
@@ -930,7 +955,7 @@
                         <div class="subtask-summary" onclick="toggleExpand(this)">
                             <div class="st-title-sum text-truncate">${titleIcon} ${st.title}</div>
                             <div class="st-meta-sum">
-                                <span class="badge" style="background:${statusColor}">${st.trangthai}</span>
+                                <span class="badge" style="background:${statusColor}; color: ${st.trangthai === 'Đã hoàn thành' ? '#fff' : '#000'}">${st.trangthai}</span>
                                 <span class="badge ${badgeClass}">📅 Hạn: ${formatDateVN(st.deadline)}</span>
                             </div>
                         </div>
