@@ -200,7 +200,29 @@ html_code = """
     function showApp() {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
-        initApp(); 
+        async function initApp() {
+    try {
+        const response = await fetch(API_URL);
+        const data = await response.json();
+        
+        if (data && data.length > 0) {
+            tasks = data;
+        } else {
+            tasks = initialData; // Nếu Google Sheet trống thì dùng data mẫu
+        }
+        updateCounters();
+        renderTasks();
+    } catch (error) {
+        alert("Lỗi khi tải dữ liệu từ máy chủ. Đang dùng dữ liệu lưu cục bộ.");
+        // Fallback về LocalStorage nếu mạng lỗi
+        const savedData = localStorage.getItem('sce_tasks_data_v3');
+        if (savedData) {
+            tasks = JSON.parse(savedData);
+            updateCounters();
+        }
+        renderTasks();
+    }
+}
     }
 
     function logout() {
@@ -281,7 +303,8 @@ html_code = """
     let taskIdCounter = 100;
     let subtaskIdCounter = 1000;
     let tasks = [];
-    
+    // Dán cái link Google Apps Script bạn vừa copy vào đây
+const API_URL = "https://script.google.com/macros/s/AKfycbwLvbjfXT5MWVsb4Nj-EgMZO1CgdxoFN7TlFpEfXSkqnThmjd_nQzTvLAL_jRfvvVwuog/exec";
     let editingTaskId = null;
     let editingSubtaskIds = []; 
 
@@ -314,7 +337,21 @@ html_code = """
             updateCounters();
         } else {
             tasks = initialData;
-            saveData();
+            function saveData() {
+    // Vẫn lưu dự phòng vào LocalStorage phòng khi rớt mạng
+    localStorage.setItem('sce_tasks_data_v3', JSON.stringify(tasks));
+
+    // Đẩy dữ liệu lên Google Sheets
+    fetch(API_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'text/plain;charset=utf-8',
+        },
+        body: JSON.stringify(tasks)
+    }).catch(error => {
+        console.error('Lỗi khi lưu lên Google Sheets:', error);
+    });
+}
             updateCounters();
         } 
         renderTasks();
