@@ -1,9 +1,11 @@
+import urllib.parse
+html_code = """
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ thống Theo dõi Nhiệm vụ Xúc tiến đầu tư - SCE</title>
+    <title>Hệ thống Theo dõi Nhiệm vụ Xúc tiến đầu tư</title>
     <style>
         :root {
             --primary: #004b87;
@@ -221,7 +223,8 @@
         let d = new Date(dateObj);
         if (type === 'hangtuan') {
             const day = d.getDay();
-            const diff = day === 0 ? 0 : 7 - day; // Ngày cuối tuần là Chủ nhật
+            // Thứ 6 trong JS getDay() trả về 5
+            const diff = day <= 5 ? 5 - day : 6; // Nếu hôm nay <= thứ 6 thì lấy thứ 6 tuần này, nếu là thứ 7 thì lấy thứ 6 tuần sau
             d.setDate(d.getDate() + diff);
             return formatDateYMD(d);
         } else if (type === 'hangthang') {
@@ -484,7 +487,7 @@
                 else if(st.trangthai === 'Chậm tiến độ') statusColor = '#d93025';
 
                 let cycleText = 'Cụ thể';
-                if(st.loaiThoiHan === 'hangtuan') cycleText = 'Hàng tuần';
+                if(st.loaiThoiHan === 'hangtuan') cycleText = 'Thứ 6 hàng tuần';
                 else if(st.loaiThoiHan === 'hangthang') cycleText = 'Hàng tháng';
                 else if(st.loaiThoiHan === 'hangquy') cycleText = 'Hàng quý';
                 else if(st.loaiThoiHan === 'hangnam') cycleText = 'Hàng năm';
@@ -504,7 +507,7 @@
                             <div class="subtask-full-content">
                                 <div class="task-actions" style="margin-bottom:12px;">
                                     <button class="btn btn-edit" onclick="enableSubtaskEdit(${st.id})">Sửa Nhiệm vụ</button>
-                                    <button class="btn btn-danger" onclick="deleteSubtask(${task.id},${st.id})">Xóa</button>
+                                    <button class="btn btn-danger" onclick="deleteSubtask(${task.id}, ${st.id})">Xóa</button>
                                 </div>
                                 <div style="display: grid; gap: 8px;">
                                     <div><strong>Đơn vị Chủ trì:</strong> ${st.chutri || '---'}</div>
@@ -522,7 +525,7 @@
                                         <label style="font-size: 11px;">Loại lặp</label>
                                         <select id="edit-st-lth-${st.id}" class="detail-input editing" onchange="onLoaiThoiHanChange(this, 'edit-st-dl-${st.id}')">
                                             <option value="cuthe" ${st.loaiThoiHan === 'cuthe' ? 'selected' : ''}>Cụ thể</option>
-                                            <option value="hangtuan" ${st.loaiThoiHan === 'hangtuan' ? 'selected' : ''}>Hàng tuần</option>
+                                            <option value="hangtuan" ${st.loaiThoiHan === 'hangtuan' ? 'selected' : ''}>Hàng tuần (Thứ 6)</option>
                                             <option value="hangthang" ${st.loaiThoiHan === 'hangthang' ? 'selected' : ''}>Hàng tháng</option>
                                             <option value="hangquy" ${st.loaiThoiHan === 'hangquy' ? 'selected' : ''}>Hàng quý</option>
                                             <option value="hangnam" ${st.loaiThoiHan === 'hangnam' ? 'selected' : ''}>Hàng năm</option>
@@ -555,7 +558,7 @@
                                     </div>
                                 </div>
                                 <div class="task-actions" style="margin-top:10px; justify-content: flex-end;">
-                                    <button class="btn btn-success" onclick="saveSubtaskEdit(${task.id},${st.id})">Lưu Nhiệm vụ</button>
+                                    <button class="btn btn-success" onclick="saveSubtaskEdit(${task.id}, ${st.id})">Lưu Nhiệm vụ</button>
                                 </div>
                             </div>
                         `}
@@ -695,6 +698,7 @@
         if (!editingSubtaskIds.includes(subtaskId)) {
             editingSubtaskIds.push(subtaskId);
             renderTasks();
+            setTimeout(() => { document.getElementById(`edit-st-title-${subtaskId}`).focus(); }, 50);
         }
     }
 
@@ -798,3 +802,4 @@
 </script>
 </body>
 </html>
+"""
