@@ -46,7 +46,6 @@
         .btn-attach:hover { background: #1557b0; }
 
         /* Giao diện Phần mềm chính */
-        #mainApp { display: block; } /* Luôn hiển thị */
         .header { display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 20px; }
         .header img { max-height: 60px; margin-bottom: 10px; }
         .header h1 { color: var(--primary); text-transform: uppercase; font-size: 24px; margin-bottom: 5px; }
@@ -144,15 +143,13 @@
         .subtask-item.is-editing { border-color: var(--info); background-color: #f0f8ff;}
 
         /* CSS PHÂN QUYỀN CHẾ ĐỘ CHỈ XEM (GUEST) */
-        body.read-only-mode .btn-add,
-        body.read-only-mode .btn-edit,
-        body.read-only-mode .btn-danger,
-        body.read-only-mode .btn-success,
-        body.read-only-mode .btn-remove-link,
-        body.read-only-mode .add-form,
-        body.read-only-mode .task-actions,
-        body.read-only-mode .subtask-form,
-        body.read-only-mode .subtask-edit-mode { display: none !important; }
+        body.read-only-mode #taskList .btn-edit,
+        body.read-only-mode #taskList .btn-danger,
+        body.read-only-mode #taskList .btn-success,
+        body.read-only-mode #taskList .btn-remove-link,
+        body.read-only-mode #taskList .task-actions,
+        body.read-only-mode #taskList .subtask-form,
+        body.read-only-mode #taskList .subtask-edit-mode { display: none !important; }
         
         /* Các class ẩn hiện tùy vai trò nội bộ */
         .ct-action, .st-action, .work-action, .approve-action, .admin-action { display: none !important; }
@@ -173,7 +170,6 @@
 </head>
 <body data-role="guest" class="read-only-mode">
 
-<!-- MÀN HÌNH PHẦN MỀM CHÍNH -->
 <div class="container" id="mainApp">
     <div class="header">
         <img src="Logo.jpg" alt="Logo SCE">
@@ -303,24 +299,33 @@
         const btnLogin = document.getElementById('btnLogin');
         const btnLogout = document.getElementById('btnLogout');
         const userInfo = document.getElementById('userInfo');
+        const btnManageUsers = document.getElementById('btnManageUsers');
+        const btnAddTask = document.getElementById('btnAddTask');
 
         if (role === 'guest') {
             document.body.classList.add('read-only-mode');
-            btnLogin.style.display = 'inline-flex';
-            btnLogout.style.display = 'none';
-            userInfo.innerText = `👁️ Đang xem (Khách)`;
-            userInfo.style.color = '#666';
+            if (btnLogin) btnLogin.style.display = 'inline-flex';
+            if (btnLogout) btnLogout.style.display = 'none';
+            if (btnManageUsers) btnManageUsers.style.display = 'none';
+            if (btnAddTask) btnAddTask.style.display = 'none';
+            if (userInfo) {
+                userInfo.innerText = `👁️ Đang xem (Khách)`;
+                userInfo.style.color = '#666';
+            }
         } else {
             document.body.classList.remove('read-only-mode');
-            btnLogin.style.display = 'none';
-            btnLogout.style.display = 'inline-flex';
-            userInfo.style.color = 'var(--primary)';
+            if (btnLogin) btnLogin.style.display = 'none';
+            if (btnLogout) btnLogout.style.display = 'inline-flex';
+            if (userInfo) userInfo.style.color = 'var(--primary)';
             
             const u = sessionStorage.getItem('username');
             let roleName = "Admin";
             if(role === 'chuyenvien') roleName = "Chuyên viên";
             if(role === 'lanhdao') roleName = "Lãnh đạo";
-            userInfo.innerText = `👤 ${u} (${roleName})`;
+            if (userInfo) userInfo.innerText = `👤 ${u} (${roleName})`;
+
+            if (btnManageUsers) btnManageUsers.style.display = (role === 'admin') ? 'inline-flex' : 'none';
+            if (btnAddTask) btnAddTask.style.display = (role === 'admin') ? 'inline-flex' : 'none';
         }
     }
 
@@ -1000,7 +1005,7 @@
                                         </div>
                                         <div style="display: flex; justify-content: flex-end; gap: 5px;">
                                             <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="toggleWorkForm(${st.id})">Hủy</button>
-                                            <button class="btn btn-success" style="padding: 4px 8px; font-size: 11px;" onclick="addWork(${task.id},${st.id})">Lưu Công việc</button>
+                                            <button class="btn btn-success" style="padding: 4px 8px; font-size: 11px;" onclick="addWork(${task.id},${st.id})">Lưu</button>
                                         </div>
                                     </div>
                                 </div>
@@ -1133,7 +1138,6 @@
         });
     }
 
-    // Các hàm tương tác thêm, sửa, xóa
     function addTask() {
         const title = document.getElementById('newTaskTitle').value;
         if (!title.trim()) { alert("Vui lòng nhập tên Chương trình / Kế hoạch!"); return; }
