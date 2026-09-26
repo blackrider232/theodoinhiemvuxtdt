@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ thống Theo dõi Nhiệm vụ Xúc tiến đầu tư</title>
+    <title>Hệ thống Theo dõi Nhiệm vụ Xúc tiến đầu tư - SCE</title>
     <style>
         :root {
             --primary: #004b87;
@@ -81,13 +81,7 @@
         .subtask-item.subtask-overdue { border: 2px solid var(--danger); background-color: var(--danger-bg); }
         
         /* Giao diện Tóm tắt (Summary) */
-        .subtask-summary {
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            padding: 10px;
-        }
+        .subtask-summary { cursor: pointer; display: flex; flex-direction: column; gap: 8px; padding: 10px; }
         .subtask-summary:hover { background-color: #f1f3f4; }
         .st-title-sum { font-weight: 600; font-size: 14px; color: var(--primary); }
         .st-title-sum.text-truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -101,7 +95,7 @@
         /* Giao diện Chi tiết (ẩn mặc định) */
         .subtask-full-content { display: none; padding: 0 10px 10px 10px; border-top: 1px dashed #ccc; margin-top: 5px; padding-top: 10px; color: #444; }
         .subtask-item.expanded .subtask-full-content { display: block; }
-        .subtask-item.expanded .st-title-sum.text-truncate { white-space: normal; } /* Bỏ thu gọn tên khi click mở */
+        .subtask-item.expanded .st-title-sum.text-truncate { white-space: normal; } 
 
         /* Giao diện khi ấn Sửa (Edit mode) */
         .subtask-edit-mode { display: flex; flex-direction: column; padding: 10px; gap: 10px;}
@@ -146,8 +140,9 @@
         <p>Tự động lặp lại, cảnh báo chậm tiến độ & tự động dọn dẹp</p>
     </div>
 
-    <!-- Thanh công cụ -->
     <div class="action-bar">
+        <!-- Thông báo trạng thái lưu -->
+        <span id="syncStatus" style="margin-right: 15px; font-size: 13px; color: #1e8e3e; font-style: italic;"></span>
         <button class="btn btn-logout" onclick="logout()">🔒 Đăng xuất</button>
     </div>
 
@@ -169,9 +164,38 @@
 </div>
 
 <script>
-    // === CẤU HÌNH MẬT KHẨU BẢO VỆ ===
+    // === CẤU HÌNH API VÀ MẬT KHẨU ===
     const APP_PASSWORD = "Xtdt@Sce"; 
+    const API_URL = "https://script.google.com/macros/s/AKfycbwLvbjfXT5MWVsb4Nj-EgMZO1CgdxoFN7TlFpEfXSkqnThmjd_nQzTvLAL_jRfvvVwuog/exec";
     
+    let taskIdCounter = 100;
+    let subtaskIdCounter = 1000;
+    let tasks = [];
+    let editingTaskId = null;
+    let editingSubtaskIds = []; 
+
+    const initialData = [
+        {
+            id: 1,
+            title: "Triển khai đợt cao điểm 100 ngày thực hiện các nhiệm vụ trọng tâm",
+            fileLink: "",
+            subtasks: [
+                { 
+                    id: 101, 
+                    title: "Xúc tiến, tháo gỡ và triển khai các dự án đầu tư mới", 
+                    loaiThoiHan: "cuthe",
+                    deadline: "2026-10-22", 
+                    chutri: "Phòng HCTC",
+                    phoihop: "Các Phòng",
+                    trangthai: "Chưa thực hiện",
+                    ketqua: "",
+                    spawnedNext: false,
+                    completedDate: null
+                }
+            ]
+        }
+    ];
+
     window.onload = function() {
         if(sessionStorage.getItem('isLoggedIn') === 'true') {
             showApp();
@@ -198,29 +222,7 @@
     function showApp() {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
-        async function initApp() {
-    try {
-        const response = await fetch(API_URL);
-        const data = await response.json();
-        
-        if (data && data.length > 0) {
-            tasks = data;
-        } else {
-            tasks = initialData; // Nếu Google Sheet trống thì dùng data mẫu
-        }
-        updateCounters();
-        renderTasks();
-    } catch (error) {
-        alert("Lỗi khi tải dữ liệu từ máy chủ. Đang dùng dữ liệu lưu cục bộ.");
-        // Fallback về LocalStorage nếu mạng lỗi
-        const savedData = localStorage.getItem('sce_tasks_data_v3');
-        if (savedData) {
-            tasks = JSON.parse(savedData);
-            updateCounters();
-        }
-        renderTasks();
-    }
-}
+        initApp(); 
     }
 
     function logout() {
@@ -229,6 +231,69 @@
         document.getElementById('loginScreen').style.display = 'flex';
         document.getElementById('passwordInput').value = '';
         document.getElementById('errorMsg').style.display = 'none';
+    }
+
+    // === KẾT NỐI GOOGLE SHEETS ===
+    async function initApp() {
+        document.getElementById('syncStatus').innerText = "Đang tải dữ liệu từ máy chủ...";
+        try {
+            const response = await fetch(API_URL);
+            const data = await response.json();
+            
+            if (data && data.length > 0) {
+                tasks = data;
+                document.getElementById('syncStatus').innerText = "Đã tải dữ liệu mới nhất.";
+                setTimeout(() => { document.getElementById('syncStatus').innerText = ""; }, 3000);
+            } else {
+                // Nếu Sheets trống (lần đầu chạy), sử dụng data mẫu và lưu lên sheet
+                tasks = initialData;
+                saveData(); 
+            }
+            updateCounters();
+            renderTasks();
+        } catch (error) {
+            console.error("Lỗi lấy dữ liệu:", error);
+            document.getElementById('syncStatus').innerText = "Lỗi kết nối. Đang dùng bộ nhớ tạm.";
+            document.getElementById('syncStatus').style.color = "var(--danger)";
+            
+            // Lấy từ bộ nhớ máy tính nếu Google Sheets không lấy được
+            const savedData = localStorage.getItem('sce_tasks_data_v3');
+            if (savedData) {
+                tasks = JSON.parse(savedData);
+                updateCounters();
+            }
+            renderTasks();
+        }
+    }
+
+    function saveData() {
+        // Lưu dự phòng cục bộ
+        localStorage.setItem('sce_tasks_data_v3', JSON.stringify(tasks));
+        document.getElementById('syncStatus').innerText = "Đang lưu lên máy chủ...";
+        document.getElementById('syncStatus').style.color = "var(--primary)";
+
+        // Gửi lên Google Sheets
+        fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify(tasks)
+        }).then(response => {
+            document.getElementById('syncStatus').innerText = "Đã lưu đồng bộ.";
+            document.getElementById('syncStatus').style.color = "var(--success)";
+            setTimeout(() => { document.getElementById('syncStatus').innerText = ""; }, 3000);
+        }).catch(error => {
+            console.error('Lỗi khi lưu:', error);
+            document.getElementById('syncStatus').innerText = "Lỗi lưu dữ liệu. Đã lưu tạm thời trên máy.";
+            document.getElementById('syncStatus').style.color = "var(--danger)";
+        });
+    }
+
+    function updateCounters() {
+        tasks.forEach(t => {
+            if (t.id >= taskIdCounter) taskIdCounter = t.id + 1;
+            t.subtasks.forEach(st => {
+                if (st.id >= subtaskIdCounter) subtaskIdCounter = st.id + 1;
+            });
+        });
     }
 
     // === HÀM HỖ TRỢ NGÀY THÁNG LẶP LẠI ===
@@ -243,8 +308,7 @@
         let d = new Date(dateObj);
         if (type === 'hangtuan') {
             const day = d.getDay();
-            // Thứ 6 trong JS getDay() trả về 5
-            const diff = day <= 5 ? 5 - day : 6; // Nếu hôm nay <= thứ 6 thì lấy thứ 6 tuần này, nếu là thứ 7 thì lấy thứ 6 tuần sau
+            const diff = day <= 5 ? 5 - day : 6;
             d.setDate(d.getDate() + diff);
             return formatDateYMD(d);
         } else if (type === 'hangthang') {
@@ -294,78 +358,6 @@
             let baseDate = dateInput.value ? new Date(dateInput.value) : new Date();
             dateInput.value = getPeriodEnd(baseDate, val);
         }
-    }
-
-
-    // === LOGIC PHẦN MỀM CHÍNH ===
-    let taskIdCounter = 100;
-    let subtaskIdCounter = 1000;
-    let tasks = [];
-    // Dán cái link Google Apps Script bạn vừa copy vào đây
-const API_URL = "https://script.google.com/macros/s/AKfycbwLvbjfXT5MWVsb4Nj-EgMZO1CgdxoFN7TlFpEfXSkqnThmjd_nQzTvLAL_jRfvvVwuog/exec";
-    let editingTaskId = null;
-    let editingSubtaskIds = []; 
-
-    const initialData = [
-        {
-            id: 1,
-            title: "Triển khai đợt cao điểm 100 ngày thực hiện các nhiệm vụ trọng tâm",
-            fileLink: "",
-            subtasks: [
-                { 
-                    id: 101, 
-                    title: "Xúc tiến, tháo gỡ và triển khai các dự án đầu tư mới", 
-                    loaiThoiHan: "cuthe",
-                    deadline: "2026-10-22", 
-                    chutri: "Phòng HCTC",
-                    phoihop: "Các Phòng",
-                    trangthai: "Chưa thực hiện",
-                    ketqua: "",
-                    spawnedNext: false,
-                    completedDate: null
-                }
-            ]
-        }
-    ];
-
-    function initApp() {
-        const savedData = localStorage.getItem('sce_tasks_data_v3');
-        if (savedData) {
-            tasks = JSON.parse(savedData);
-            updateCounters();
-        } else {
-            tasks = initialData;
-            function saveData() {
-    // Vẫn lưu dự phòng vào LocalStorage phòng khi rớt mạng
-    localStorage.setItem('sce_tasks_data_v3', JSON.stringify(tasks));
-
-    // Đẩy dữ liệu lên Google Sheets
-    fetch(API_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'text/plain;charset=utf-8',
-        },
-        body: JSON.stringify(tasks)
-    }).catch(error => {
-        console.error('Lỗi khi lưu lên Google Sheets:', error);
-    });
-}
-            updateCounters();
-        } 
-        renderTasks();
-    }
-
-    function updateCounters() {
-        tasks.forEach(t => {
-            if (t.id >= taskIdCounter) taskIdCounter = t.id + 1;
-            t.subtasks.forEach(st => {
-                if (st.id >= subtaskIdCounter) subtaskIdCounter = st.id + 1;
-            });
-        });
-    }
-
-    function saveData() {
-        localStorage.setItem('sce_tasks_data_v3', JSON.stringify(tasks));
     }
 
     // --- HÀM TỰ ĐỘNG HÓA CHẠY NGẦM ---
@@ -473,7 +465,6 @@ const API_URL = "https://script.google.com/macros/s/AKfycbwLvbjfXT5MWVsb4Nj-EgMZ
         return earliest;
     }
 
-    // Toggle expand class cho thẻ cha
     function toggleExpand(element) {
         element.parentElement.classList.toggle('expanded');
     }
@@ -516,7 +507,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbwLvbjfXT5MWVsb4Nj-EgMZ
                 
                 const stClass = `subtask-item ${isSubtaskEditing ? 'is-editing' : ''} ${isOverdue ? 'subtask-overdue' : ''}`;
                 
-                let statusColor = '#6c757d'; // default
+                let statusColor = '#6c757d'; 
                 if(st.trangthai === 'Đã hoàn thành') statusColor = '#1e8e3e';
                 else if(st.trangthai === 'Đang thực hiện') statusColor = '#17a2b8';
                 else if(st.trangthai === 'Chậm tiến độ') statusColor = '#d93025';
@@ -530,7 +521,6 @@ const API_URL = "https://script.google.com/macros/s/AKfycbwLvbjfXT5MWVsb4Nj-EgMZ
                 subtasksHTML += `
                     <div class="${stClass}">
                         ${!isSubtaskEditing ? `
-                            <!-- CHẾ ĐỘ XEM (Gồm Tóm tắt và Chi tiết ẩn) -->
                             <div class="subtask-summary" onclick="toggleExpand(this)">
                                 <div class="st-title-sum text-truncate">▶ ${st.title}</div>
                                 <div class="st-meta-sum">
@@ -542,7 +532,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbwLvbjfXT5MWVsb4Nj-EgMZ
                             <div class="subtask-full-content">
                                 <div class="task-actions" style="margin-bottom:12px;">
                                     <button class="btn btn-edit" onclick="enableSubtaskEdit(${st.id})">Sửa Nhiệm vụ</button>
-                                    <button class="btn btn-danger" onclick="deleteSubtask(${task.id}, ${st.id})">Xóa</button>
+                                    <button class="btn btn-danger" onclick="deleteSubtask(${task.id},${st.id})">Xóa</button>
                                 </div>
                                 <div style="display: grid; gap: 8px;">
                                     <div><strong>Đơn vị Chủ trì:</strong> ${st.chutri || '---'}</div>
@@ -552,7 +542,6 @@ const API_URL = "https://script.google.com/macros/s/AKfycbwLvbjfXT5MWVsb4Nj-EgMZ
                                 </div>
                             </div>
                         ` : `
-                            <!-- CHẾ ĐỘ SỬA TRỰC TIẾP -->
                             <div class="subtask-edit-mode">
                                 <input type="text" id="edit-st-title-${st.id}" class="subtask-title-input" value="${st.title}">
                                 <div class="subtask-details">
@@ -593,7 +582,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbwLvbjfXT5MWVsb4Nj-EgMZ
                                     </div>
                                 </div>
                                 <div class="task-actions" style="margin-top:10px; justify-content: flex-end;">
-                                    <button class="btn btn-success" onclick="saveSubtaskEdit(${task.id}, ${st.id})">Lưu Nhiệm vụ</button>
+                                    <button class="btn btn-success" onclick="saveSubtaskEdit(${task.id},${st.id})">Lưu Nhiệm vụ</button>
                                 </div>
                             </div>
                         `}
@@ -637,7 +626,6 @@ const API_URL = "https://script.google.com/macros/s/AKfycbwLvbjfXT5MWVsb4Nj-EgMZ
                     
                     ${subtasksHTML}
                     
-                    <!-- Form thêm mới -->
                     <div class="subtask-form" id="st-form-container-${task.id}">
                         <div style="font-weight:bold; font-size:13px; color:var(--primary); margin-bottom:5px;">Tạo Nhiệm vụ cụ thể mới:</div>
                         <div class="form-row">
