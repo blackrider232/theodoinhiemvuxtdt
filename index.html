@@ -41,31 +41,43 @@
         #mainApp { display: none; }
         .header { text-align: center; margin-bottom: 20px; }
         .header h1 { color: var(--primary); text-transform: uppercase; font-size: 24px; margin-bottom: 5px; }
-        .action-bar { display: flex; justify-content: flex-end; margin-bottom: 20px; align-items: center; }
+        .action-bar { display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center; background: var(--card-bg); padding: 10px 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);}
         
-        .add-form { background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap; }
+        /* Indicator Đồng bộ Cloud */
+        .sync-indicator { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 20px; transition: 0.3s; user-select: none;}
+        .sync-indicator.synced { color: #1e8e3e; background: #e6f4ea; }
+        .sync-indicator.syncing { color: #b06000; background: #fef7e0; }
+        .sync-indicator.error { color: #d93025; background: #fce8e6; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .sync-indicator.syncing #syncIcon { display: inline-block; animation: spin 1.5s linear infinite; }
+        
         .input-group { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 5px; }
-        input[type="text"], input[type="password"], input[type="url"], input[type="date"], select { padding: 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 14px; }
+        input[type="text"], input[type="password"], input[type="url"], input[type="date"], select { padding: 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 14px; outline: none; transition: 0.2s;}
+        input[type="text"]:focus, input[type="url"]:focus, input[type="date"]:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(0,75,135,0.1); }
         
-        .btn { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
-        .btn-add { background: var(--primary); align-self: flex-end; height: 40px; padding: 10px 15px; font-size: 14px;}
+        .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; }
+        .btn-add { background: var(--primary); }
         .btn-add:hover { background: #003666; }
         .btn-danger { background: var(--danger); }
         .btn-success { background: var(--success); }
         .btn-edit { background: var(--info); }
-        .btn-logout { background: #5f6368; padding: 8px 15px; font-size: 14px;}
+        .btn-logout { background: #5f6368; }
         .btn-logout:hover { background: #3c4043; }
         .btn-attach { background: #1a73e8; padding: 4px 8px; font-size: 11px; margin-left: 10px; text-decoration: none; color: white; border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,0.2);}
         .btn-attach:hover { background: #1557b0; }
-        
-        /* Chuyển Layout Thành Grid (Nhiều nhiệm vụ 1 hàng) */
-        .task-list { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); 
-            gap: 20px; 
-            align-items: start; 
-        }
 
+        /* Popup Modal Thêm mới */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+        .modal.active { display: flex; }
+        .modal-content { background-color: var(--card-bg); padding: 30px; border-radius: 12px; width: 100%; max-width: 600px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f0f2f5; padding-bottom: 15px;}
+        .modal-header h3 { margin: 0; color: var(--primary); font-size: 18px;}
+        .close-modal { font-size: 24px; cursor: pointer; color: #888; transition: 0.2s;}
+        .close-modal:hover { color: var(--danger); }
+        
+        /* Layout Grid Nhiệm vụ */
+        .task-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 20px; align-items: start; }
         .task-card { background: var(--card-bg); border-left: 5px solid var(--primary); border-radius: 6px; padding: 15px 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: all 0.3s; width: 100%; box-sizing: border-box; }
         .task-card.urgent { border-left-color: var(--danger); background-color: var(--danger-bg); }
         .task-header { display: flex; flex-direction: column; margin-bottom: 10px; gap: 10px; }
@@ -80,7 +92,6 @@
         .subtask-item { display: flex; flex-direction: column; background: #f8f9fa; border-radius: 4px; margin-bottom: 8px; font-size: 13px; border: 1px solid #e0e0e0; transition: all 0.2s; }
         .subtask-item.subtask-overdue { border: 2px solid var(--danger); background-color: var(--danger-bg); }
         
-        /* Giao diện Tóm tắt (Summary) */
         .subtask-summary { cursor: pointer; display: flex; flex-direction: column; gap: 8px; padding: 10px; }
         .subtask-summary:hover { background-color: #f1f3f4; }
         .st-title-sum { font-weight: 600; font-size: 14px; color: var(--primary); }
@@ -92,12 +103,10 @@
         .bg-danger { background: var(--danger); }
         .bg-secondary { background: #6c757d; }
 
-        /* Giao diện Chi tiết (ẩn mặc định) */
         .subtask-full-content { display: none; padding: 0 10px 10px 10px; border-top: 1px dashed #ccc; margin-top: 5px; padding-top: 10px; color: #444; }
         .subtask-item.expanded .subtask-full-content { display: block; }
         .subtask-item.expanded .st-title-sum.text-truncate { white-space: normal; } 
 
-        /* Giao diện khi ấn Sửa (Edit mode) */
         .subtask-edit-mode { display: flex; flex-direction: column; padding: 10px; gap: 10px;}
         .subtask-details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; color: #555; }
         .detail-item { display: flex; flex-direction: column; gap: 4px; }
@@ -115,7 +124,6 @@
         .hide-in-edit { display: flex !important; }
         .is-editing .show-in-edit { display: flex !important; }
         .is-editing .hide-in-edit { display: none !important; }
-        
         .task-card.is-editing { border-left-color: var(--info); box-shadow: 0 4px 8px rgba(0,0,0,0.1);}
         .subtask-item.is-editing { border-color: var(--info); background-color: #f0f8ff;}
     </style>
@@ -140,22 +148,39 @@
         <p>Tự động lặp lại, cảnh báo chậm tiến độ & tự động dọn dẹp</p>
     </div>
 
+    <!-- Thanh công cụ & Sync Indicator -->
     <div class="action-bar">
-        <!-- Thông báo trạng thái lưu -->
-        <span id="syncStatus" style="margin-right: 15px; font-size: 13px; color: #1e8e3e; font-style: italic;"></span>
-        <button class="btn btn-logout" onclick="logout()">🔒 Đăng xuất</button>
+        <div id="syncStatusIndicator" class="sync-indicator">
+            <span id="syncIcon">☁️</span> <span id="syncText">Đang khởi tạo...</span>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn btn-add" onclick="openAddTaskModal()">➕ Tạo mới CT / KH / TBKL</button>
+            <button class="btn btn-logout" onclick="logout()">🔒 Đăng xuất</button>
+        </div>
     </div>
 
-    <div class="add-form">
-        <div class="input-group" style="flex: 2;">
-            <label>Chương trình / Kế hoạch / TBKL mới</label>
-            <input type="text" id="newTaskTitle" placeholder="Nhập tên Chương trình / Kế hoạch / Thông báo kết luận...">
+    <!-- Modal Thêm mới Chương trình -->
+    <div id="addTaskModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Tạo mới Chương trình / Kế hoạch / TBKL</h3>
+                <span class="close-modal" onclick="closeAddTaskModal()">&times;</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <div class="input-group">
+                    <label style="font-weight: 600; font-size: 13px;">Tên nội dung <span style="color:red">*</span></label>
+                    <input type="text" id="newTaskTitle" placeholder="Ví dụ: Triển khai Kế hoạch số 277/KH-UBND...">
+                </div>
+                <div class="input-group">
+                    <label style="font-weight: 600; font-size: 13px;">Link đính kèm (Tùy chọn)</label>
+                    <input type="url" id="newTaskLink" placeholder="Dán link văn bản, link Google Drive...">
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px;">
+                    <button class="btn btn-danger" onclick="closeAddTaskModal()">Hủy bỏ</button>
+                    <button class="btn btn-success" onclick="addTask()">Lưu Chương trình</button>
+                </div>
+            </div>
         </div>
-        <div class="input-group" style="flex: 1;">
-            <label>Link đính kèm (Tùy chọn)</label>
-            <input type="url" id="newTaskLink" placeholder="Dán link Google Drive, văn bản...">
-        </div>
-        <button class="btn btn-add" onclick="addTask()">+ Thêm Chương trình</button>
     </div>
 
     <div class="task-list" id="taskList">
@@ -233,19 +258,36 @@
         document.getElementById('errorMsg').style.display = 'none';
     }
 
+    // === QUẢN LÝ TRẠNG THÁI ĐỒNG BỘ CLOUD ===
+    function updateSyncStatus(state) {
+        const ind = document.getElementById('syncStatusIndicator');
+        const icon = document.getElementById('syncIcon');
+        const text = document.getElementById('syncText');
+        
+        ind.className = 'sync-indicator ' + state;
+        if (state === 'synced') {
+            icon.innerHTML = '☁️✔️';
+            text.innerHTML = 'Đã lưu trên Cloud';
+        } else if (state === 'syncing') {
+            icon.innerHTML = '☁️🔄';
+            text.innerHTML = 'Đang lưu...';
+        } else if (state === 'error') {
+            icon.innerHTML = '☁️⚠️';
+            text.innerHTML = 'Chưa lưu lên Cloud (Lưu nội bộ)';
+        }
+    }
+
     // === KẾT NỐI GOOGLE SHEETS ===
     async function initApp() {
-        document.getElementById('syncStatus').innerText = "Đang tải dữ liệu từ máy chủ...";
+        updateSyncStatus('syncing');
         try {
             const response = await fetch(API_URL);
             const data = await response.json();
             
             if (data && data.length > 0) {
                 tasks = data;
-                document.getElementById('syncStatus').innerText = "Đã tải dữ liệu mới nhất.";
-                setTimeout(() => { document.getElementById('syncStatus').innerText = ""; }, 3000);
+                updateSyncStatus('synced');
             } else {
-                // Nếu Sheets trống (lần đầu chạy), sử dụng data mẫu và lưu lên sheet
                 tasks = initialData;
                 saveData(); 
             }
@@ -253,10 +295,9 @@
             renderTasks();
         } catch (error) {
             console.error("Lỗi lấy dữ liệu:", error);
-            document.getElementById('syncStatus').innerText = "Lỗi kết nối. Đang dùng bộ nhớ tạm.";
-            document.getElementById('syncStatus').style.color = "var(--danger)";
+            updateSyncStatus('error');
             
-            // Lấy từ bộ nhớ máy tính nếu Google Sheets không lấy được
+            // Lấy từ bộ nhớ máy tính nếu rớt mạng
             const savedData = localStorage.getItem('sce_tasks_data_v3');
             if (savedData) {
                 tasks = JSON.parse(savedData);
@@ -269,21 +310,17 @@
     function saveData() {
         // Lưu dự phòng cục bộ
         localStorage.setItem('sce_tasks_data_v3', JSON.stringify(tasks));
-        document.getElementById('syncStatus').innerText = "Đang lưu lên máy chủ...";
-        document.getElementById('syncStatus').style.color = "var(--primary)";
+        updateSyncStatus('syncing');
 
         // Gửi lên Google Sheets
         fetch(API_URL, {
             method: 'POST',
             body: JSON.stringify(tasks)
         }).then(response => {
-            document.getElementById('syncStatus').innerText = "Đã lưu đồng bộ.";
-            document.getElementById('syncStatus').style.color = "var(--success)";
-            setTimeout(() => { document.getElementById('syncStatus').innerText = ""; }, 3000);
+            updateSyncStatus('synced');
         }).catch(error => {
             console.error('Lỗi khi lưu:', error);
-            document.getElementById('syncStatus').innerText = "Lỗi lưu dữ liệu. Đã lưu tạm thời trên máy.";
-            document.getElementById('syncStatus').style.color = "var(--danger)";
+            updateSyncStatus('error');
         });
     }
 
@@ -294,6 +331,18 @@
                 if (st.id >= subtaskIdCounter) subtaskIdCounter = st.id + 1;
             });
         });
+    }
+
+    // === QUẢN LÝ MODAL TẠO MỚI ===
+    function openAddTaskModal() {
+        document.getElementById('addTaskModal').classList.add('active');
+        document.getElementById('newTaskTitle').focus();
+    }
+    
+    function closeAddTaskModal() {
+        document.getElementById('addTaskModal').classList.remove('active');
+        document.getElementById('newTaskTitle').value = '';
+        document.getElementById('newTaskLink').value = '';
     }
 
     // === HÀM HỖ TRỢ NGÀY THÁNG LẶP LẠI ===
@@ -374,13 +423,11 @@
                 
                 const dlTime = new Date(st.deadline).setHours(0,0,0,0);
                 
-                // 1. Cảnh báo chậm tiến độ
                 if (st.trangthai !== 'Đã hoàn thành' && dlTime < todayTime && st.trangthai !== 'Chậm tiến độ') {
                     st.trangthai = 'Chậm tiến độ';
                     dataChanged = true;
                 }
                 
-                // 2. Đánh dấu ngày hoàn thành
                 if (st.trangthai === 'Đã hoàn thành' && !st.completedDate) {
                     st.completedDate = new Date().toISOString();
                     dataChanged = true;
@@ -389,7 +436,6 @@
                     dataChanged = true;
                 }
                 
-                // 3. Tự động xóa sau 7 ngày
                 let keep = true;
                 if (st.trangthai === 'Đã hoàn thành' && st.completedDate) {
                     const compTime = new Date(st.completedDate).getTime();
@@ -403,7 +449,6 @@
                 if (keep) {
                     subtasksToKeep.push(st);
                     
-                    // 4. Sinh vòng lặp nhiệm vụ định kỳ
                     let currentForSpawn = st;
                     while(['hangtuan', 'hangthang', 'hangquy', 'hangnam'].includes(currentForSpawn.loaiThoiHan) && !currentForSpawn.spawnedNext) {
                         let currentDlTime = new Date(currentForSpawn.deadline).setHours(0,0,0,0);
@@ -676,11 +721,9 @@
             subtasks: []
         });
 
-        document.getElementById('newTaskTitle').value = '';
-        document.getElementById('newTaskLink').value = '';
-
         saveData();
         renderTasks();
+        closeAddTaskModal();
     }
     
     function deleteTask(id) {
