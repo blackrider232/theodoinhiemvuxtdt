@@ -35,8 +35,6 @@
         .btn-edit { background-color: #fff9db; border-color: #fcc419; } .btn-edit:hover { background-color: #fff3bf; box-shadow: 0 3px 8px rgba(252,196,25,0.3);}
         .btn-info { background-color: #e6fcf5; border-color: #63e6be; } .btn-info:hover { background-color: #c3fae8; box-shadow: 0 3px 8px rgba(99,230,190,0.3);}
         .btn-logout { background-color: #f8f9fa; border-color: #ced4da; } .btn-logout:hover { background-color: #e9ecef; box-shadow: 0 3px 8px rgba(0,0,0,0.1);}
-        
-        /* Đã tối ưu Flexbox chống che chữ cho link đính kèm */
         .btn-attach { background-color: #f3f0ff; border: 1px solid #b197fc; padding: 6px 12px; font-size: 12px; font-weight: 600; text-decoration: none; color: #000; border-radius: 6px; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; max-width: 100%; box-sizing: border-box;}
         .btn-attach:hover { background-color: #e5dbff; box-shadow: 0 2px 4px rgba(177,151,252,0.3);}
         .btn-attach-text { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
@@ -68,8 +66,7 @@
         input[type="text"], input[type="password"], input[type="url"], input[type="date"], select { padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; outline: none; transition: 0.2s; box-sizing: border-box; background: #fff; color: #000;}
         input[type="text"]:focus, input[type="password"]:focus, input[type="url"]:focus, input[type="date"]:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,75,135,0.1); }
         
-        .file-links-display { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; width: 100%; }
-        
+        .file-links-display { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; width: 100%; }
         .link-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; align-items: center; width: 100%; }
         .link-row input[type="text"] { flex: 1; min-width: 120px; }
         .link-row input[type="url"] { flex: 2; min-width: 180px; }
@@ -108,7 +105,7 @@
         .urgent-text { color: var(--danger); font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 5px; margin-top: 5px;}
         .warning-text { color: var(--warning); font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 5px; margin-top: 5px;}
         
-        /* Subtask - Nhiệm vụ (Cấp 2) */
+        /* Subtask - Nhiệm vụ */
         .subtasks-wrapper { margin-top: 5px; border-top: 2px dashed #eaeaea; padding-top: 15px;}
         .subtasks-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .subtasks-header-row h4 { margin: 0; font-size: 14px; color: var(--text-main); font-weight: 700; text-transform: uppercase;}
@@ -550,14 +547,14 @@
     async function initApp() {
         updateSyncStatus('syncing');
         try {
-            const response = await fetch(API_URL); const data = await response.json();
+            const response = await fetch(API_URL + "?t=" + new Date().getTime(), { redirect: 'follow' }); const data = await response.json();
             if (data) {
                 if (Array.isArray(data)) tasks = data; else { tasks = data.tasks || []; if (data.users && data.users.length > 0) users = data.users; }
                 updateSyncStatus('synced');
             }
             migrateOldData(); updateCounters(); updateFilterDropdown(); renderTasks();
             if(backgroundSyncInterval) clearInterval(backgroundSyncInterval);
-            backgroundSyncInterval = setInterval(fetchBackgroundSync, 10000);
+            backgroundSyncInterval = setInterval(fetchBackgroundSync, 60000); // 60s
         } catch (error) {
             updateSyncStatus('error'); const savedData = localStorage.getItem('sce_tasks_data_v4');
             if (savedData) {
@@ -571,7 +568,7 @@
     async function fetchBackgroundSync() {
         if(document.querySelector('.modal.active')) return;
         try {
-            const response = await fetch(API_URL); const data = await response.json();
+            const response = await fetch(API_URL + "?t=" + new Date().getTime(), { redirect: 'follow' }); const data = await response.json();
             if (data) {
                 let sTasks = Array.isArray(data) ? data : (data.tasks || []); let sUsers = data.users || users;
                 sTasks.forEach(t => {
@@ -603,7 +600,7 @@
     function saveData() {
         if (getSessionData('userRole') === 'guest') return; 
         const payload = { tasks: tasks, users: users }; localStorage.setItem('sce_tasks_data_v4', JSON.stringify(payload)); updateSyncStatus('syncing');
-        fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) })
+        fetch(API_URL, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) })
         .then(response => { updateSyncStatus('synced'); }) .catch(error => { updateSyncStatus('error'); });
     }
 
@@ -713,6 +710,15 @@
         return cleanTitle + suffix;
     }
 
+    function getPeriodEnd(dateObj, type) {
+        let d = new Date(dateObj);
+        if (type === 'hangtuan') { const day = d.getDay(); const diff = day <= 5 ? 5 - day : 6; d.setDate(d.getDate() + diff); return formatDateYMD(d); } 
+        else if (type === 'hangthang') { return formatDateYMD(new Date(d.getFullYear(), d.getMonth() + 1, 0)); } 
+        else if (type === 'hangquy') { let q = Math.floor(d.getMonth() / 3); return formatDateYMD(new Date(d.getFullYear(), (q + 1) * 3, 0)); } 
+        else if (type === 'hangnam') { return formatDateYMD(new Date(d.getFullYear(), 12, 0)); }
+        return formatDateYMD(d); 
+    }
+
     function getNextPeriodEnd(dateStr, type) {
         let d = new Date(dateStr);
         if (type === 'hangtuan') { d.setDate(d.getDate() + 7); return formatDateYMD(d); } 
@@ -773,7 +779,7 @@
         if (dataChanged && getSessionData('userRole') !== 'guest') { saveData(); }
     }
 
-    // Toggle Nhiệm vụ - Ghi nhớ ID đang mở
+    // LƯU TRẠNG THÁI EXPAND CỦA NHIỆM VỤ
     function toggleExpand(element, stId) { 
         element.parentElement.classList.toggle('expanded'); 
         if (element.parentElement.classList.contains('expanded')) {
@@ -939,6 +945,7 @@
 
                 let addWorkBtn = ((isAdmin || isNhapLieu || isSubtaskLead) && !isViewer) ? `<button class="btn btn-add work-action" style="padding: 4px 10px; font-size: 11px;" onclick="openWorkModal(${task.id}, ${st.id})">➕ Thêm CV</button>` : '';
 
+                // Render Works
                 let worksHTML = '';
                 if (st.works && st.works.length > 0) {
                     worksHTML = `<div class="work-list-container">`;
@@ -947,7 +954,7 @@
                         let wClass = 'work-item'; let wTitleColor = 'var(--text-main)'; 
                         if (w.trangthai !== 'Đã hoàn thành') {
                             if (wWeight === 1) { wClass += ' work-overdue'; wTitleColor = 'var(--danger)'; } 
-                            else if (wWeight === 1.5) { wClass += ' work-warning'; wTitleColor = 'var(--warning)'; }
+                            else if (wWeight === 1.5) { wClass += ' work-warning'; wTitleColor = '#d35400'; }
                         } else { wClass += ' work-completed'; }
 
                         const isWorkLead = (currentUser && currentUser === w.chutri);
@@ -1108,7 +1115,8 @@
     function approveSubtask(taskId, subtaskId) { if(confirm("Xác nhận duyệt hoàn thành nhiệm vụ này?")) { const task = tasks.find(t => t.id === taskId); if(task) { const subtask = task.subtasks.find(st => st.id === subtaskId); if(subtask) { subtask.trangthai = 'Đã hoàn thành'; subtask.completedDate = new Date().toISOString(); saveData(); renderTasks(); } } } }
 
     function openWorkModal(taskId, subtaskId, workId = null) {
-        document.getElementById('workModal').classList.add('active'); document.getElementById('modalWTaskId').value = taskId; document.getElementById('modalWSubtaskId').value = subtaskId; document.getElementById('w-ct').innerHTML = generateUserDropdown('');
+        document.getElementById('workModal').classList.add('active');
+        document.getElementById('modalWTaskId').value = taskId; document.getElementById('modalWSubtaskId').value = subtaskId; document.getElementById('w-ct').innerHTML = generateUserDropdown('');
         if (workId) {
             document.getElementById('modalWHeader').innerText = 'Sửa Công việc triển khai'; document.getElementById('modalWId').value = workId;
             const t = tasks.find(x => x.id == taskId); const st = t.subtasks.find(x => x.id == subtaskId); const w = st.works.find(x => x.id == workId);
