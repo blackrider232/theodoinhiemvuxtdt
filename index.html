@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Phần mềm Theo dõi Nhiệm vụ Xúc tiến đầu tư - SCE</title>
+    <!-- Thư viện SheetJS để xuất Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
             --primary: #004b87;
@@ -21,65 +23,27 @@
             --warning-bg: #fdf2e9;
             --border: #d1d5db;
         }
-        body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            padding: 20px;
-            line-height: 1.5;
-        }
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 20px; line-height: 1.5; }
+        .container { max-width: 1400px; margin: 0 auto; }
 
-        /* TONE MÀU NÚT SÁNG HƠN (PASTEL SÁNG) - CHỮ ĐEN */
-        .btn { 
-            padding: 8px 16px; 
-            border: 1px solid rgba(0,0,0,0.15); 
-            border-radius: 6px; 
-            cursor: pointer; 
-            font-weight: 600; 
-            color: #000; 
-            transition: all 0.2s ease; 
-            display: inline-flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 13px; 
-            gap: 5px; 
-        }
+        /* Nút chung */
+        .btn { padding: 8px 16px; border: 1px solid rgba(0,0,0,0.15); border-radius: 6px; cursor: pointer; font-weight: 600; color: #000; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; gap: 5px; }
         .btn:active { transform: translateY(1px); }
-        
-        .btn-add { background-color: #e7f5ff; border-color: #74c0fc; } 
-        .btn-add:hover { background-color: #d0ebff; box-shadow: 0 3px 8px rgba(116,192,252,0.3);}
-        
-        .btn-danger { background-color: #fff5f5; border-color: #ffa8a8; } 
-        .btn-danger:hover { background-color: #ffe3e3; box-shadow: 0 3px 8px rgba(255,168,168,0.3);}
-        
-        .btn-success { background-color: #ebfbee; border-color: #8ce99a; } 
-        .btn-success:hover { background-color: #d3f9d8; box-shadow: 0 3px 8px rgba(140,233,154,0.3);}
-        
-        .btn-edit { background-color: #fff9db; border-color: #fcc419; } 
-        .btn-edit:hover { background-color: #fff3bf; box-shadow: 0 3px 8px rgba(252,196,25,0.3);}
-        
-        .btn-info { background-color: #e6fcf5; border-color: #63e6be; } 
-        .btn-info:hover { background-color: #c3fae8; box-shadow: 0 3px 8px rgba(99,230,190,0.3);}
-        
-        .btn-logout { background-color: #f8f9fa; border-color: #ced4da; } 
-        .btn-logout:hover { background-color: #e9ecef; box-shadow: 0 3px 8px rgba(0,0,0,0.1);}
-        
+        .btn-add { background-color: #e7f5ff; border-color: #74c0fc; } .btn-add:hover { background-color: #d0ebff; box-shadow: 0 3px 8px rgba(116,192,252,0.3);}
+        .btn-danger { background-color: #fff5f5; border-color: #ffa8a8; } .btn-danger:hover { background-color: #ffe3e3; box-shadow: 0 3px 8px rgba(255,168,168,0.3);}
+        .btn-success { background-color: #ebfbee; border-color: #8ce99a; } .btn-success:hover { background-color: #d3f9d8; box-shadow: 0 3px 8px rgba(140,233,154,0.3);}
+        .btn-edit { background-color: #fff9db; border-color: #fcc419; } .btn-edit:hover { background-color: #fff3bf; box-shadow: 0 3px 8px rgba(252,196,25,0.3);}
+        .btn-info { background-color: #e6fcf5; border-color: #63e6be; } .btn-info:hover { background-color: #c3fae8; box-shadow: 0 3px 8px rgba(99,230,190,0.3);}
+        .btn-logout { background-color: #f8f9fa; border-color: #ced4da; } .btn-logout:hover { background-color: #e9ecef; box-shadow: 0 3px 8px rgba(0,0,0,0.1);}
         .btn-attach { background-color: #f3f0ff; border: 1px solid #b197fc; padding: 4px 10px; font-size: 12px; font-weight: 600; margin-left: 10px; text-decoration: none; color: #000; border-radius: 4px; transition: 0.2s;}
         .btn-attach:hover { background-color: #e5dbff; box-shadow: 0 2px 4px rgba(177,151,252,0.3);}
 
-        /* Giao diện Header & ActionBar */
-        #mainApp { display: block; }
+        /* Header & ActionBar */
         .header { display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 25px; }
         .header img { max-height: 65px; margin-bottom: 12px; }
         .header h1 { color: var(--primary); text-transform: uppercase; font-size: 24px; margin-bottom: 5px; font-weight: 700; letter-spacing: 0.5px;}
-        .action-bar { display: flex; justify-content: space-between; margin-bottom: 25px; align-items: center; background: var(--card-bg); padding: 12px 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); flex-wrap: wrap; gap: 10px;}
+        .action-bar { display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center; background: var(--card-bg); padding: 12px 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); flex-wrap: wrap; gap: 10px;}
         
-        /* Indicator Đồng bộ Cloud */
         .sync-indicator { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; padding: 6px 14px; border-radius: 20px; transition: 0.3s; user-select: none;}
         .sync-indicator.synced { color: #000; background: #ebfbee; border: 1px solid #8ce99a;}
         .sync-indicator.syncing { color: #000; background: #fff9db; border: 1px solid #fcc419;}
@@ -87,18 +51,22 @@
         @keyframes spin { 100% { transform: rotate(360deg); } }
         .sync-indicator.syncing #syncIcon { display: inline-block; animation: spin 1.5s linear infinite; }
         
+        /* Dashboard KPI & Lọc */
+        .kpi-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .kpi-card { background: var(--card-bg); padding: 15px 20px; border-radius: 10px; border-left: 5px solid; box-shadow: 0 2px 6px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: center;}
+        .kpi-value { font-size: 28px; font-weight: 700; color: var(--text-main); line-height: 1.2;}
+        .kpi-label { font-size: 13px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;}
+
+        .filter-bar { display: flex; gap: 12px; margin-bottom: 25px; flex-wrap: wrap; background: #fff; padding: 15px 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); align-items: center;}
+        .search-input { flex: 2; min-width: 250px; background-color: #f8f9fa !important; border-color: #e9ecef !important;}
+        .filter-select { flex: 1; min-width: 180px; background-color: #f8f9fa !important; border-color: #e9ecef !important;}
+        
         /* Inputs & Form */
         input[type="text"], input[type="password"], input[type="url"], input[type="date"], select { padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; outline: none; transition: 0.2s; box-sizing: border-box; background: #fff; color: #000;}
         input[type="text"]:focus, input[type="password"]:focus, input[type="url"]:focus, input[type="date"]:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,75,135,0.1); }
-        
-        .file-links-display { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; width: 100%; }
-        .btn-attach-text { display: inline-block; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-left: 5px; vertical-align: middle;}
-        
         .link-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; width: 100%; }
-        .link-row input[type="text"] { flex: 1; min-width: 100px; }
-        .link-row input[type="url"] { flex: 2; min-width: 150px; }
+        .link-row input[type="text"] { flex: 1; min-width: 100px; } .link-row input[type="url"] { flex: 2; min-width: 150px; }
         .btn-remove-link { background-color: #fff5f5; color: #000; border: 1px solid #ffa8a8; border-radius: 6px; cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-weight: bold; transition: 0.2s;}
-        .btn-remove-link:hover { background-color: #ffe3e3; }
         
         /* Modal Popup */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.55); align-items: center; justify-content: center; backdrop-filter: blur(4px); }
@@ -109,7 +77,6 @@
         .modal-header h3 { margin: 0; color: var(--primary); font-size: 18px; font-weight: 700;}
         .close-modal { font-size: 28px; cursor: pointer; color: #aaa; transition: 0.2s; line-height: 1;}
         .close-modal:hover { color: var(--danger); }
-        
         .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
         .form-group label { font-weight: 600; font-size: 13px; color: #333; }
         .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
@@ -124,16 +91,19 @@
         .task-card.warning { border-left-color: var(--warning); background-color: #fdf8f4; border-right: 1px solid #fae5d3; border-top: 1px solid #fae5d3; border-bottom: 1px solid #fae5d3;}
         .task-card.completed { border-left-color: var(--success); opacity: 0.85;}
         
-        .task-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; gap: 15px; }
-        .task-title-area { flex: 1; min-width: 0; }
+        .task-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; }
         .task-title { font-size: 17px; font-weight: 700; margin: 0 0 5px 0; word-wrap: break-word; color: var(--primary); line-height: 1.4;}
         .task-actions { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end;}
         
-        .urgent-text { color: var(--danger); font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 5px;}
-        .warning-text { color: var(--warning); font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 5px;}
+        /* Progress Bar */
+        .progress-bg { background: #e9ecef; border-radius: 10px; height: 6px; width: 100%; overflow: hidden; margin-top: 8px;}
+        .progress-bar { height: 100%; transition: width 0.4s ease; }
         
-        /* Subtask - Nhiệm vụ (Cấp 2) */
-        .subtasks-wrapper { margin-top: 10px; border-top: 2px dashed #eaeaea; padding-top: 15px;}
+        .urgent-text { color: var(--danger); font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 5px; margin-top: 5px;}
+        .warning-text { color: var(--warning); font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 5px; margin-top: 5px;}
+        
+        /* Subtask - Nhiệm vụ */
+        .subtasks-wrapper { margin-top: 5px; border-top: 2px dashed #eaeaea; padding-top: 15px;}
         .subtasks-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .subtasks-header-row h4 { margin: 0; font-size: 14px; color: var(--text-main); font-weight: 700; text-transform: uppercase;}
         
@@ -145,7 +115,6 @@
         .subtask-summary { cursor: pointer; display: flex; flex-direction: column; gap: 8px; padding: 12px 15px; background: #f8f9fa; transition: 0.2s;}
         .subtask-summary:hover { background: #f1f3f4; }
         .subtask-item.expanded .subtask-summary { background: #fff; border-bottom: 1px solid var(--border);}
-        
         .subtask-item.subtask-overdue .subtask-summary { background: var(--danger-bg); }
         .subtask-item.subtask-warning .subtask-summary { background: var(--warning-bg); }
         .subtask-item.subtask-completed .subtask-summary { background: var(--success-bg); }
@@ -156,42 +125,43 @@
         .subtask-item.subtask-warning .st-title-sum { color: var(--warning); }
         .subtask-item.subtask-completed .st-title-sum { color: var(--success); text-decoration: line-through;}
         
-        .st-meta-sum { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-        
-        /* HUY HIỆU PASTEL SÁNG, CHỮ ĐEN */
         .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; color: #000; font-weight: 700; display: inline-block; letter-spacing: 0.3px; border: 1px solid rgba(0,0,0,0.1); }
-        .bg-danger { background: #ffe3e3; }
-        .bg-warning { background: #ffec99; }
-        .bg-success { background: #d3f9d8; }
-        .bg-secondary { background: #f1f3f5; }
-        .bg-info { background: #d0ebff; }
+        .bg-danger { background: #ffe3e3; } .bg-warning { background: #ffec99; } .bg-success { background: #d3f9d8; } .bg-secondary { background: #f1f3f5; } .bg-info { background: #d0ebff; }
 
         .subtask-full-content { display: none; padding: 15px; color: var(--text-main); background: #fff;}
         .subtask-item.expanded .subtask-full-content { display: block; }
         .subtask-item.expanded .st-title-sum.text-truncate { white-space: normal; } 
-
         .info-grid { display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; align-items: baseline; font-size: 13px;}
         .info-grid strong { color: #555; font-size: 12px; text-transform: uppercase; letter-spacing: 0.2px;}
 
-        /* Works - Công việc (Cấp 3) */
+        /* Works - Công việc */
         .work-list-container { margin-top: 15px; border-top: 1px dashed var(--border); padding-top: 15px; }
         .work-item { background: #fafafa; border: 1px solid var(--border); border-left: 4px solid #ccc; padding: 12px; margin-bottom: 8px; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);}
         .work-item.work-overdue { border-left-color: var(--danger); background: var(--danger-bg); border-color: #fad3d0;}
         .work-item.work-warning { border-left-color: var(--warning); background: var(--warning-bg); border-color: #fae5d3;}
         .work-item.work-completed { opacity: 0.7; border-left-color: var(--success); background: #fdfdfd;}
 
-        /* CÁC CLASS ẨN HIỆN TÙY VAI TRÒ NỘI BỘ */
-        body.read-only-mode #taskList .btn-edit,
-        body.read-only-mode #taskList .btn-danger,
-        body.read-only-mode #taskList .btn-success,
-        body.read-only-mode #taskList .btn-add { display: none !important; }
-        
+        /* PHÂN QUYỀN */
+        body.read-only-mode #taskList .btn-edit, body.read-only-mode #taskList .btn-danger, body.read-only-mode #taskList .btn-success, body.read-only-mode #taskList .btn-add { display: none !important; }
         .ct-action, .st-action, .work-action, .approve-action, .admin-action { display: none !important; }
-
         body[data-role="admin"] .ct-action, body[data-role="admin"] .st-action, body[data-role="admin"] .work-action, body[data-role="admin"] .approve-action, body[data-role="admin"] .admin-action { display: inline-flex !important; }
         body[data-role="nhaplieu"] .ct-action, body[data-role="nhaplieu"] .st-action, body[data-role="nhaplieu"] .work-action, body[data-role="nhaplieu"] .approve-action { display: inline-flex !important; }
         body[data-role="lanhdao"] .approve-action { display: inline-flex !important; }
         body[data-role="chuyenvien"] .work-action { display: inline-flex !important; }
+
+        /* ĐỊNH DẠNG BẢN IN (PRINT CSS) */
+        @media print {
+            body { background: #fff; color: #000; padding: 0; margin: 0; }
+            .action-bar, .kpi-bar, .filter-bar, .btn, .modal, .sync-indicator, .file-links-display { display: none !important; }
+            .container { max-width: 100%; width: 100%; margin: 0; padding: 0;}
+            .task-list { display: block; }
+            .task-card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; margin-bottom: 20px; border-left-width: 1px; padding: 15px;}
+            .subtask-item { border: 1px solid #ddd; border-left-width: 4px; break-inside: avoid; }
+            .subtask-summary { background: #f9f9f9 !important; border-bottom: 1px solid #ddd;}
+            .subtask-full-content { display: block !important; padding: 10px; } /* Luôn bung mở chi tiết khi in */
+            .badge { border: 1px solid #999; background: transparent !important; color: #000 !important; }
+            .progress-bg { display: none; }
+        }
     </style>
 </head>
 <body data-role="guest" class="read-only-mode">
@@ -215,6 +185,38 @@
             <button id="btnLogin" class="btn btn-success" onclick="openLoginModal()">🔑 Đăng nhập</button>
             <button id="btnChangePass" class="btn btn-info" onclick="openChangePasswordModal()" style="display:none;">🔑 Đổi Pass</button>
             <button id="btnLogout" class="btn btn-logout" onclick="logout()" style="display:none;">🔒 Thoát</button>
+        </div>
+    </div>
+
+    <!-- KPI Dashboard -->
+    <div class="kpi-bar hide-on-print">
+        <div class="kpi-card" style="border-color: var(--primary);">
+            <div class="kpi-value" id="kpiTotal">0</div>
+            <div class="kpi-label">Tổng Chương trình</div>
+        </div>
+        <div class="kpi-card" style="border-color: var(--info);">
+            <div class="kpi-value" id="kpiActive">0</div>
+            <div class="kpi-label">Nhiệm vụ đang làm</div>
+        </div>
+        <div class="kpi-card" style="border-color: var(--warning);">
+            <div class="kpi-value" id="kpiWarning">0</div>
+            <div class="kpi-label">Sắp đến hạn (≤ 2 ngày)</div>
+        </div>
+        <div class="kpi-card" style="border-color: var(--danger);">
+            <div class="kpi-value" id="kpiOverdue">0</div>
+            <div class="kpi-label">Chậm tiến độ</div>
+        </div>
+    </div>
+
+    <!-- Bộ lọc & Công cụ xuất -->
+    <div class="filter-bar hide-on-print">
+        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Tìm kiếm chương trình, nhiệm vụ, kết quả..." oninput="renderTasks()">
+        <select id="filterUser" class="filter-select" onchange="renderTasks()">
+            <option value="">Lọc theo Chủ trì (Tất cả)</option>
+        </select>
+        <div style="flex: 1; display: flex; gap: 8px; justify-content: flex-end;">
+            <button class="btn btn-success" style="background:#d3f9d8; border-color:#b2f2bb;" onclick="exportExcel()">📊 Xuất Excel</button>
+            <button class="btn btn-logout" onclick="window.print()">🖨️ In Báo cáo</button>
         </div>
     </div>
 
@@ -421,6 +423,7 @@
     const API_URL = "https://script.google.com/macros/s/AKfycbwLvbjfXT5MWVsb4Nj-EgMZO1CgdxoFN7TlFpEfXSkqnThmjd_nQzTvLAL_jRfvvVwuog/exec";
     let taskIdCounter = 100, subtaskIdCounter = 1000, workIdCounter = 10000; 
     let tasks = [], users = [{username: "admin", password: "Xtdt@Sce", role: "admin"}]; 
+    let backgroundSyncInterval;
 
     // === KHỞI TẠO ===
     window.onload = function() {
@@ -444,35 +447,26 @@
         const role = getSessionData('userRole') || 'guest';
         document.body.setAttribute('data-role', role);
 
-        const btnLogin = document.getElementById('btnLogin');
-        const btnLogout = document.getElementById('btnLogout');
-        const btnChangePass = document.getElementById('btnChangePass');
-        const userInfo = document.getElementById('userInfo');
-        const btnManageUsers = document.getElementById('btnManageUsers');
-        const btnAddTask = document.getElementById('btnAddTask');
+        const btnLogin = document.getElementById('btnLogin'); const btnLogout = document.getElementById('btnLogout');
+        const btnChangePass = document.getElementById('btnChangePass'); const userInfo = document.getElementById('userInfo');
+        const btnManageUsers = document.getElementById('btnManageUsers'); const btnAddTask = document.getElementById('btnAddTask');
 
         if (role === 'guest') {
             document.body.classList.add('read-only-mode');
-            if(btnLogin) btnLogin.style.display = 'inline-flex';
-            if(btnLogout) btnLogout.style.display = 'none';
-            if(btnChangePass) btnChangePass.style.display = 'none';
-            if(btnManageUsers) btnManageUsers.style.display = 'none';
+            if(btnLogin) btnLogin.style.display = 'inline-flex'; if(btnLogout) btnLogout.style.display = 'none';
+            if(btnChangePass) btnChangePass.style.display = 'none'; if(btnManageUsers) btnManageUsers.style.display = 'none';
             if(btnAddTask) btnAddTask.style.display = 'none';
             if(userInfo) { userInfo.innerHTML = `👁️ Đang xem (Khách)`; userInfo.style.color = 'var(--text-muted)'; userInfo.style.background = '#e9ecef'; }
         } else {
             document.body.classList.remove('read-only-mode');
-            if(btnLogin) btnLogin.style.display = 'none';
-            if(btnLogout) btnLogout.style.display = 'inline-flex';
+            if(btnLogin) btnLogin.style.display = 'none'; if(btnLogout) btnLogout.style.display = 'inline-flex';
             if(btnChangePass) btnChangePass.style.display = 'inline-flex';
             
             const u = getSessionData('username');
             let roleName = "Admin";
-            if(role === 'chuyenvien') roleName = "Chuyên viên";
-            else if(role === 'lanhdao') roleName = "Lãnh đạo";
-            else if(role === 'nhaplieu') roleName = "Nhập liệu";
+            if(role === 'chuyenvien') roleName = "Chuyên viên"; else if(role === 'lanhdao') roleName = "Lãnh đạo"; else if(role === 'nhaplieu') roleName = "Nhập liệu";
             
             if(userInfo) { userInfo.innerHTML = `👤 <strong>${u}</strong> <span style="font-weight:normal; font-size:12px;">(${roleName})</span>`; userInfo.style.color = 'var(--primary)'; userInfo.style.background = '#e3f2fd';}
-            
             if(btnManageUsers) btnManageUsers.style.display = (role === 'admin') ? 'inline-flex' : 'none';
             if(btnAddTask) btnAddTask.style.display = (role === 'admin' || role === 'nhaplieu') ? 'inline-flex' : 'none';
         }
@@ -482,10 +476,8 @@
     function closeLoginModal() { document.getElementById('loginModal').classList.remove('active'); document.getElementById('loginErrorMsg').style.display = 'none'; document.getElementById('usernameInput').value = ''; document.getElementById('passwordInput').value = ''; }
 
     function processLogin() {
-        const uInput = document.getElementById('usernameInput').value.trim();
-        const pInput = document.getElementById('passwordInput').value.trim();
+        const uInput = document.getElementById('usernameInput').value.trim(); const pInput = document.getElementById('passwordInput').value.trim();
         const rem = document.getElementById('rememberMe').checked;
-        
         let user = users.find(x => x.username.toLowerCase() === uInput.toLowerCase() && x.password === pInput);
         if (!user && uInput.toLowerCase() === 'admin' && pInput === 'Xtdt@Sce') {
             user = { username: 'admin', password: 'Xtdt@Sce', role: 'admin' };
@@ -541,16 +533,23 @@
         users.push({username: un, password: pw, role: rl});
         document.getElementById('newUsername').value = ''; document.getElementById('newPassword').value = '';
         saveData(); renderUsers();
+        updateFilterDropdown();
     }
-    function deleteUser(index) { if(confirm('Bạn có chắc muốn xóa tài khoản này?')) { users.splice(index, 1); saveData(); renderUsers(); } }
+    function deleteUser(index) { if(confirm('Bạn có chắc muốn xóa tài khoản này?')) { users.splice(index, 1); saveData(); renderUsers(); updateFilterDropdown(); } }
 
     function generateUserDropdown(selectedUser) {
         let options = '<option value="">-- Chọn Chủ trì --</option>';
-        users.forEach(u => {
-            const sel = (u.username === selectedUser) ? 'selected' : '';
-            options += `<option value="${u.username}" ${sel}>${u.username}</option>`;
-        });
+        users.forEach(u => { const sel = (u.username === selectedUser) ? 'selected' : ''; options += `<option value="${u.username}" ${sel}>${u.username}</option>`; });
         return options;
+    }
+
+    function updateFilterDropdown() {
+        const filterEl = document.getElementById('filterUser');
+        if(!filterEl) return;
+        const currentVal = filterEl.value;
+        let html = '<option value="">Lọc theo Chủ trì (Tất cả)</option>';
+        users.forEach(u => { html += `<option value="${u.username}" ${currentVal === u.username ? 'selected' : ''}>${u.username}</option>`; });
+        filterEl.innerHTML = html;
     }
 
     // === KẾT NỐI API CLOUD (CORS BYPASS: TEXT/PLAIN) ===
@@ -562,7 +561,6 @@
         else if (state === 'error') { icon.innerHTML = '☁️⚠️'; text.innerHTML = 'Lưu nội bộ'; }
     }
 
-    let backgroundSyncInterval;
     async function initApp() {
         updateSyncStatus('syncing');
         try {
@@ -572,9 +570,8 @@
                 else { tasks = data.tasks || []; if (data.users && data.users.length > 0) users = data.users; }
                 updateSyncStatus('synced');
             }
-            migrateOldData(); updateCounters(); renderTasks();
+            migrateOldData(); updateCounters(); updateFilterDropdown(); renderTasks();
             
-            // Chạy đồng bộ nền mỗi 10 giây
             if(backgroundSyncInterval) clearInterval(backgroundSyncInterval);
             backgroundSyncInterval = setInterval(fetchBackgroundSync, 10000);
             
@@ -583,24 +580,22 @@
             const savedData = localStorage.getItem('sce_tasks_data_v4');
             if (savedData) {
                 try { const parsed = JSON.parse(savedData); tasks = parsed.tasks || []; if (parsed.users && parsed.users.length > 0) users = parsed.users; } catch(e) {}
-                migrateOldData(); updateCounters();
+                migrateOldData(); updateCounters(); updateFilterDropdown();
             }
             renderTasks();
         }
     }
-    
+
     async function fetchBackgroundSync() {
-        // Tạm dừng tải ngầm nếu đang mở form sửa để tránh đè dữ liệu đang gõ
         if(document.querySelector('.modal.active')) return;
         try {
             const response = await fetch(API_URL); const data = await response.json();
             if (data) {
                 let sTasks = Array.isArray(data) ? data : (data.tasks || []);
                 let sUsers = data.users || users;
-                
                 if (JSON.stringify(sTasks) !== JSON.stringify(tasks)) {
                     tasks = sTasks; users = sUsers;
-                    migrateOldData(); updateCounters(); renderTasks();
+                    migrateOldData(); updateCounters(); updateFilterDropdown(); renderTasks();
                 }
             }
         } catch (error) {}
@@ -613,9 +608,7 @@
             t.subtasks.forEach(st => { 
                 if (st.phoihop !== undefined) delete st.phoihop; 
                 if (!st.works) st.works = []; 
-                st.works.forEach(w => {
-                    if (!w.trangthai) w.trangthai = 'Chưa thực hiện';
-                });
+                st.works.forEach(w => { if (!w.trangthai) w.trangthai = 'Chưa thực hiện'; });
             });
         });
     }
@@ -626,15 +619,9 @@
         localStorage.setItem('sce_tasks_data_v4', JSON.stringify(payload));
         updateSyncStatus('syncing');
         
-        fetch(API_URL, { 
-            method: 'POST', 
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify(payload) 
-        }).then(response => { 
-            updateSyncStatus('synced'); 
-        }).catch(error => { 
-            updateSyncStatus('error'); 
-        });
+        fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) })
+        .then(response => { updateSyncStatus('synced'); })
+        .catch(error => { updateSyncStatus('error'); });
     }
 
     function updateCounters() {
@@ -647,36 +634,8 @@
         });
     }
 
-    function addLinkRow(containerId, name = '', url = '') {
-        const container = document.getElementById(containerId); const row = document.createElement('div'); row.className = 'link-row';
-        row.innerHTML = `<input type="text" placeholder="Tên tài liệu..." value="${name}"> <input type="url" placeholder="Dán link..." value="${url}"> <button type="button" class="btn-remove-link" onclick="this.parentElement.remove()" title="Xóa link">✕</button>`;
-        container.appendChild(row);
-    }
-
-    function getLinksFromContainer(containerId) {
-        const container = document.getElementById(containerId); const rows = container.querySelectorAll('.link-row'); const links = [];
-        rows.forEach(row => {
-            const inputs = row.querySelectorAll('input');
-            const name = inputs[0].value.trim(); const url = inputs[1].value.trim();
-            if (url) {
-                let finalName = name;
-                if (!finalName) {
-                    try {
-                        const urlObj = new URL(url);
-                        if (urlObj.hostname.includes('drive.google.com')) { if (urlObj.pathname.includes('/folders/')) finalName = 'Thư mục Drive'; else finalName = 'Tài liệu Drive'; } 
-                        else { const pathSegments = urlObj.pathname.split('/').filter(p => p && p.length > 2); if (pathSegments.length > 0) finalName = decodeURIComponent(pathSegments[pathSegments.length - 1]); else finalName = urlObj.hostname; }
-                    } catch(e) { finalName = url.replace(/^https?:\/\//, ''); }
-                    if (finalName.length > 30) finalName = finalName.substring(0, 30) + '...';
-                }
-                links.push({ name: finalName, url: url });
-            }
-        });
-        return links;
-    }
-
+    // === HỖ TRỢ NGÀY THÁNG ===
     function formatDateYMD(date) { const y = date.getFullYear(); const m = String(date.getMonth() + 1).padStart(2, '0'); const d = String(date.getDate()).padStart(2, '0'); return `${y}-${m}-${d}`; }
-    
-    // Ép buộc định dạng dd/mm/yyyy
     function formatDateVN(dateStr) { 
         if (!dateStr) return ''; 
         if (dateStr.includes('T')) dateStr = dateStr.split('T')[0];
@@ -684,71 +643,7 @@
         if (parts.length === 3) { return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`; } 
         return dateStr; 
     }
-
-    // === TÍNH TRỌNG SỐ CHO THUẬT TOÁN SẮP XẾP ===
-    function getWorkWeight(w) {
-        if (w.trangthai === 'Đã hoàn thành') return 4;
-        if (!w.deadline) return 3;
-        const today = new Date().setHours(0,0,0,0);
-        const dlTime = new Date(w.deadline).setHours(0,0,0,0);
-        if (dlTime < today) return 1; 
-        const diffDays = Math.round((dlTime - today) / 86400000);
-        if (diffDays >= 0 && diffDays <= 2) return 1.5; 
-        if (w.trangthai === 'Đang thực hiện') return 2;
-        return 3;
-    }
-
-    function getSubtaskWeight(st) {
-        if (st.trangthai === 'Đã hoàn thành') return 4;
-        const today = new Date().setHours(0,0,0,0);
-        const dlTime = st.deadline ? new Date(st.deadline).setHours(0,0,0,0) : Infinity;
-        
-        let stMinW = 3; 
-        if (st.trangthai === 'Chậm tiến độ' || (dlTime < today)) stMinW = 1;
-        else {
-            const diffDays = Math.round((dlTime - today) / 86400000);
-            if (diffDays >= 0 && diffDays <= 2) stMinW = 1.5;
-            else if (st.trangthai === 'Đang thực hiện') stMinW = 2;
-        }
-
-        if (st.works && st.works.length > 0) {
-            st.works.forEach(w => {
-                const wWeight = getWorkWeight(w);
-                if (wWeight < stMinW) stMinW = wWeight;
-            });
-        }
-        return stMinW;
-    }
-
-    function getTaskWeight(task) {
-        if (!task.subtasks || task.subtasks.length === 0) return 3;
-        let minW = 4;
-        task.subtasks.forEach(st => { const w = getSubtaskWeight(st); if (w < minW) minW = w; });
-        return minW;
-    }
-
-    function getEarliestDeadline(task) {
-        if (!task.subtasks || task.subtasks.length === 0) return null;
-        let earliest = null;
-        task.subtasks.forEach(st => {
-            if (st.trangthai !== "Đã hoàn thành") {
-                if (st.deadline) {
-                    const d = new Date(st.deadline);
-                    if (!earliest || d < earliest) earliest = d;
-                }
-                if (st.works && st.works.length > 0) {
-                    st.works.forEach(w => {
-                        if (w.trangthai !== "Đã hoàn thành" && w.deadline) {
-                            const wd = new Date(w.deadline);
-                            if (!earliest || wd < earliest) earliest = wd;
-                        }
-                    });
-                }
-            }
-        });
-        return earliest;
-    }
-
+    
     function formatRecurringTitle(title, loaiThoiHan, deadlineStr) {
         if (!deadlineStr || loaiThoiHan === 'cuthe') return title;
         let cleanTitle = title.replace(/\s*\((Tuần từ|Tháng|Quý|Năm)\s+[^)]+\)$/i, '');
@@ -795,6 +690,61 @@
         }
     }
 
+    // === TÍNH TRỌNG SỐ CHO THUẬT TOÁN SẮP XẾP ===
+    function getWorkWeight(w) {
+        if (w.trangthai === 'Đã hoàn thành') return 4;
+        if (!w.deadline) return 3;
+        const today = new Date().setHours(0,0,0,0);
+        const dlTime = new Date(w.deadline).setHours(0,0,0,0);
+        if (dlTime < today) return 1; 
+        const diffDays = Math.round((dlTime - today) / 86400000);
+        if (diffDays >= 0 && diffDays <= 2) return 1.5; 
+        if (w.trangthai === 'Đang thực hiện') return 2;
+        return 3;
+    }
+
+    function getSubtaskWeight(st) {
+        if (st.trangthai === 'Đã hoàn thành') return 4;
+        const today = new Date().setHours(0,0,0,0);
+        const dlTime = st.deadline ? new Date(st.deadline).setHours(0,0,0,0) : Infinity;
+        
+        let stMinW = 3; 
+        if (st.trangthai === 'Chậm tiến độ' || (dlTime < today)) stMinW = 1;
+        else {
+            const diffDays = Math.round((dlTime - today) / 86400000);
+            if (diffDays >= 0 && diffDays <= 2) stMinW = 1.5;
+            else if (st.trangthai === 'Đang thực hiện') stMinW = 2;
+        }
+
+        if (st.works && st.works.length > 0) {
+            st.works.forEach(w => { const wWeight = getWorkWeight(w); if (wWeight < stMinW) stMinW = wWeight; });
+        }
+        return stMinW;
+    }
+
+    function getTaskWeight(task) {
+        if (!task.subtasks || task.subtasks.length === 0) return 3;
+        let minW = 4;
+        task.subtasks.forEach(st => { const w = getSubtaskWeight(st); if (w < minW) minW = w; });
+        return minW;
+    }
+
+    function getEarliestDeadline(task) {
+        if (!task.subtasks || task.subtasks.length === 0) return null;
+        let earliest = null;
+        task.subtasks.forEach(st => {
+            if (st.trangthai !== "Đã hoàn thành") {
+                if (st.deadline) { const d = new Date(st.deadline); if (!earliest || d < earliest) earliest = d; }
+                if (st.works && st.works.length > 0) {
+                    st.works.forEach(w => {
+                        if (w.trangthai !== "Đã hoàn thành" && w.deadline) { const wd = new Date(w.deadline); if (!earliest || wd < earliest) earliest = wd; }
+                    });
+                }
+            }
+        });
+        return earliest;
+    }
+
     function processBackgroundAutomations() {
         let dataChanged = false; const todayTime = new Date().setHours(0,0,0,0);
         tasks.forEach(task => {
@@ -837,6 +787,59 @@
 
     function toggleExpand(element) { element.parentElement.classList.toggle('expanded'); }
 
+    // Tính toán KPI
+    function updateKPIs(renderList) {
+        let total = renderList.length;
+        let activeSt = 0; let warningCount = 0; let overdueCount = 0;
+
+        renderList.forEach(t => {
+            t.subtasks.forEach(st => {
+                if (st.trangthai === 'Đang thực hiện') activeSt++;
+                let stW = getSubtaskWeight(st);
+                if (stW === 1) overdueCount++;
+                if (stW === 1.5) warningCount++;
+            });
+        });
+
+        document.getElementById('kpiTotal').innerText = total;
+        document.getElementById('kpiActive').innerText = activeSt;
+        document.getElementById('kpiWarning').innerText = warningCount;
+        document.getElementById('kpiOverdue').innerText = overdueCount;
+    }
+
+    // Xuất báo cáo Excel
+    function exportExcel() {
+        if(tasks.length === 0) { alert("Không có dữ liệu để xuất!"); return; }
+        let data = [];
+        data.push(['Chương trình / Kế hoạch', 'Nhiệm vụ cụ thể', 'Công việc triển khai', 'Chủ trì', 'Phối hợp', 'Hạn chót', 'Trạng thái', 'Kết quả / Ghi chú']);
+        
+        const searchTerm = document.getElementById('searchInput') ? document.getElementById('searchInput').value.toLowerCase().trim() : '';
+        const filterUser = document.getElementById('filterUser') ? document.getElementById('filterUser').value : '';
+        let listToExport = tasks; // Export full by default, can be modified to export filtered
+
+        listToExport.forEach(t => {
+            if(!t.subtasks || t.subtasks.length === 0) {
+                data.push([t.title, '', '', '', '', '', '', '']);
+            } else {
+                t.subtasks.forEach(st => {
+                    let stTitle = st.title + (st.loaiThoiHan !== 'cuthe' ? ` (Lặp: ${st.loaiThoiHan})` : '');
+                    if(!st.works || st.works.length === 0) {
+                        data.push([t.title, stTitle, '', st.chutri || '', '', formatDateVN(st.deadline), st.trangthai, st.ketqua || '']);
+                    } else {
+                        st.works.forEach(w => {
+                            data.push([t.title, stTitle, w.title, w.chutri || '', w.phoihop || '', formatDateVN(w.deadline), w.trangthai || 'Chưa thực hiện', st.ketqua || '']);
+                        });
+                    }
+                });
+            }
+        });
+
+        let ws = XLSX.utils.aoa_to_sheet(data);
+        let wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "TienDo");
+        XLSX.writeFile(wb, "Bao_Cao_Tien_Do_SCE.xlsx");
+    }
+
     function renderTasks() {
         processBackgroundAutomations();
 
@@ -845,16 +848,45 @@
         const isAdmin = currentRole === 'admin'; const isNhapLieu = currentRole === 'nhaplieu';
         const isLanhDao = currentRole === 'lanhdao'; const isViewer = currentRole === 'guest';
 
+        const searchTerm = document.getElementById('searchInput') ? document.getElementById('searchInput').value.toLowerCase().trim() : '';
+        const filterUser = document.getElementById('filterUser') ? document.getElementById('filterUser').value : '';
+
+        // TẠO BẢN SAO & LỌC DỮ LIỆU ĐỂ RENDER
+        let renderList = JSON.parse(JSON.stringify(tasks)); 
+
+        if (searchTerm || filterUser) {
+            renderList = renderList.filter(t => {
+                let tMatchSearch = !searchTerm || t.title.toLowerCase().includes(searchTerm);
+                
+                t.subtasks = t.subtasks.filter(st => {
+                    let stMatchSearch = !searchTerm || st.title.toLowerCase().includes(searchTerm) || (st.ketqua && st.ketqua.toLowerCase().includes(searchTerm));
+                    let stMatchUser = !filterUser || st.chutri === filterUser;
+                    
+                    if(st.works) {
+                        st.works = st.works.filter(w => {
+                            let wMatchSearch = !searchTerm || w.title.toLowerCase().includes(searchTerm) || (w.phoihop && w.phoihop.toLowerCase().includes(searchTerm));
+                            let wMatchUser = !filterUser || w.chutri === filterUser;
+                            return (wMatchSearch || stMatchSearch || tMatchSearch) && (wMatchUser || stMatchUser);
+                        });
+                    }
+                    return ( (stMatchSearch || tMatchSearch) && stMatchUser ) || (st.works && st.works.length > 0);
+                });
+                return (tMatchSearch && !filterUser) || t.subtasks.length > 0;
+            });
+        }
+
+        updateKPIs(renderList);
+
         const container = document.getElementById('taskList'); container.innerHTML = '';
 
-        tasks.sort((a, b) => {
+        renderList.sort((a, b) => {
             const wA = getTaskWeight(a); const wB = getTaskWeight(b);
             if (wA !== wB) return wA - wB; 
             const dlA = getEarliestDeadline(a) || Infinity; const dlB = getEarliestDeadline(b) || Infinity;
             return dlA - dlB;
         });
 
-        tasks.forEach(task => {
+        renderList.forEach(task => {
             if(task.subtasks) {
                 task.subtasks.sort((a, b) => {
                     const wA = getSubtaskWeight(a); const wB = getSubtaskWeight(b);
@@ -877,7 +909,12 @@
             }
         });
 
-        tasks.forEach(task => {
+        if (renderList.length === 0) {
+            container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #888;">Không tìm thấy công việc nào phù hợp với bộ lọc.</div>`;
+            return;
+        }
+
+        renderList.forEach(task => {
             const taskWeight = getTaskWeight(task);
 
             let fileHtml = '';
@@ -889,6 +926,12 @@
                 });
                 fileHtml += '</div>';
             }
+
+            // TÍNH TOÁN THANH TIẾN ĐỘ (%)
+            let totalSt = task.subtasks.length;
+            let compSt = task.subtasks.filter(x => x.trangthai === 'Đã hoàn thành').length;
+            let progress = totalSt === 0 ? 0 : Math.round((compSt / totalSt) * 100);
+            let progressColor = progress === 100 ? 'var(--success)' : 'var(--info)';
 
             let subtasksHTML = '';
             task.subtasks.forEach(st => {
@@ -978,7 +1021,7 @@
                         <div class="subtask-summary" onclick="toggleExpand(this)">
                             <div class="st-title-sum text-truncate">${titleIcon} ${st.title}</div>
                             <div class="st-meta-sum">
-                                <span class="badge" style="background:${statusColor}; color: #000;">${st.trangthai}</span>
+                                <span class="badge" style="background:${statusColor}; color: ${st.trangthai === 'Đã hoàn thành' ? '#fff' : '#000'}">${st.trangthai}</span>
                                 <span class="badge ${badgeClass}">📅 Hạn: <span style="color:#000;">${formatDateVN(st.deadline)}</span></span>
                             </div>
                         </div>
@@ -1020,6 +1063,10 @@
                 <div class="task-header">
                     <div class="task-title-area">
                         <h3 class="task-title">${task.title}</h3> 
+                        <div class="progress-bg">
+                            <div class="progress-bar" style="width: ${progress}%; background-color: ${progressColor};"></div>
+                        </div>
+                        <div style="font-size:11px; text-align:right; margin-top:4px; font-weight: 600; color: #666;">Tiến độ: ${progress}%</div>
                         ${fileHtml}
                     </div>
                     ${taskActionsHTML}
@@ -1038,7 +1085,34 @@
         });
     }
 
-    // === HÀM MỞ/LƯU MODAL (POPUP) QUẢN LÝ DỮ LIỆU ===
+    // === MỞ/LƯU MODAL (POPUP) ===
+    function addLinkRow(containerId, name = '', url = '') {
+        const container = document.getElementById(containerId); const row = document.createElement('div'); row.className = 'link-row';
+        row.innerHTML = `<input type="text" placeholder="Tên tài liệu..." value="${name}"> <input type="url" placeholder="Dán link..." value="${url}"> <button type="button" class="btn-remove-link" onclick="this.parentElement.remove()" title="Xóa link">✕</button>`;
+        container.appendChild(row);
+    }
+
+    function getLinksFromContainer(containerId) {
+        const container = document.getElementById(containerId); const rows = container.querySelectorAll('.link-row'); const links = [];
+        rows.forEach(row => {
+            const inputs = row.querySelectorAll('input');
+            const name = inputs[0].value.trim(); const url = inputs[1].value.trim();
+            if (url) {
+                let finalName = name;
+                if (!finalName) {
+                    try {
+                        const urlObj = new URL(url);
+                        if (urlObj.hostname.includes('drive.google.com')) { if (urlObj.pathname.includes('/folders/')) finalName = 'Thư mục Drive'; else finalName = 'Tài liệu Drive'; } 
+                        else { const pathSegments = urlObj.pathname.split('/').filter(p => p && p.length > 2); if (pathSegments.length > 0) finalName = decodeURIComponent(pathSegments[pathSegments.length - 1]); else finalName = urlObj.hostname; }
+                    } catch(e) { finalName = url.replace(/^https?:\/\//, ''); }
+                    if (finalName.length > 30) finalName = finalName.substring(0, 30) + '...';
+                }
+                links.push({ name: finalName, url: url });
+            }
+        });
+        return links;
+    }
+
     function openTaskModal(taskId = null) {
         const role = getSessionData('userRole'); if (role !== 'admin' && role !== 'nhaplieu') return;
         document.getElementById('taskModal').classList.add('active');
@@ -1096,6 +1170,7 @@
         }
     }
     function closeSubtaskModal() { document.getElementById('subtaskModal').classList.remove('active'); }
+    
     function saveSubtask() {
         const taskId = document.getElementById('modalStTaskId').value; const stId = document.getElementById('modalStId').value;
         const title = document.getElementById('st-title').value; const lth = document.getElementById('st-lth').value;
@@ -1137,6 +1212,7 @@
         }
     }
     function closeWorkModal() { document.getElementById('workModal').classList.remove('active'); }
+    
     function saveWork() {
         const taskId = document.getElementById('modalWTaskId').value; const stId = document.getElementById('modalWSubtaskId').value; const wId = document.getElementById('modalWId').value;
         const title = document.getElementById('w-title').value; const ct = document.getElementById('w-ct').value; const ph = document.getElementById('w-ph').value; const dl = document.getElementById('w-dl').value;
