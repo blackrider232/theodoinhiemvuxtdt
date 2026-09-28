@@ -562,6 +562,7 @@
         else if (state === 'error') { icon.innerHTML = '☁️⚠️'; text.innerHTML = 'Lưu nội bộ'; }
     }
 
+    let backgroundSyncInterval;
     async function initApp() {
         updateSyncStatus('syncing');
         try {
@@ -572,6 +573,11 @@
                 updateSyncStatus('synced');
             }
             migrateOldData(); updateCounters(); renderTasks();
+            
+            // Chạy đồng bộ nền mỗi 10 giây
+            if(backgroundSyncInterval) clearInterval(backgroundSyncInterval);
+            backgroundSyncInterval = setInterval(fetchBackgroundSync, 10000);
+            
         } catch (error) {
             updateSyncStatus('error');
             const savedData = localStorage.getItem('sce_tasks_data_v4');
@@ -581,6 +587,23 @@
             }
             renderTasks();
         }
+    }
+    
+    async function fetchBackgroundSync() {
+        // Tạm dừng tải ngầm nếu đang mở form sửa để tránh đè dữ liệu đang gõ
+        if(document.querySelector('.modal.active')) return;
+        try {
+            const response = await fetch(API_URL); const data = await response.json();
+            if (data) {
+                let sTasks = Array.isArray(data) ? data : (data.tasks || []);
+                let sUsers = data.users || users;
+                
+                if (JSON.stringify(sTasks) !== JSON.stringify(tasks)) {
+                    tasks = sTasks; users = sUsers;
+                    migrateOldData(); updateCounters(); renderTasks();
+                }
+            }
+        } catch (error) {}
     }
 
     function migrateOldData() {
@@ -653,7 +676,7 @@
 
     function formatDateYMD(date) { const y = date.getFullYear(); const m = String(date.getMonth() + 1).padStart(2, '0'); const d = String(date.getDate()).padStart(2, '0'); return `${y}-${m}-${d}`; }
     
-    // Ép buộc định dạng dd/mm/yyyy an toàn, luôn in ra chữ đen ở span bên ngoài hàm
+    // Ép buộc định dạng dd/mm/yyyy
     function formatDateVN(dateStr) { 
         if (!dateStr) return ''; 
         if (dateStr.includes('T')) dateStr = dateStr.split('T')[0];
@@ -913,7 +936,7 @@
                         let wClass = 'work-item'; let wTitleColor = 'var(--text-main)'; 
                         if (w.trangthai !== 'Đã hoàn thành') {
                             if (wWeight === 1) { wClass += ' work-overdue'; wTitleColor = 'var(--danger)'; } 
-                            else if (wWeight === 1.5) { wClass += ' work-warning'; wTitleColor = '#d35400'; }
+                            else if (wWeight === 1.5) { wClass += ' work-warning'; wTitleColor = 'var(--warning)'; }
                         } else { wClass += ' work-completed'; }
 
                         const isWorkLead = (currentUser && currentUser === w.chutri);
@@ -955,8 +978,8 @@
                         <div class="subtask-summary" onclick="toggleExpand(this)">
                             <div class="st-title-sum text-truncate">${titleIcon} ${st.title}</div>
                             <div class="st-meta-sum">
-                                <span class="badge" style="background:${statusColor}; color: ${st.trangthai === 'Đã hoàn thành' ? '#fff' : '#000'}">${st.trangthai}</span>
-                                <span class="badge ${badgeClass}">📅 Hạn: ${formatDateVN(st.deadline)}</span>
+                                <span class="badge" style="background:${statusColor}; color: #000;">${st.trangthai}</span>
+                                <span class="badge ${badgeClass}">📅 Hạn: <span style="color:#000;">${formatDateVN(st.deadline)}</span></span>
                             </div>
                         </div>
                         <div class="subtask-full-content">
