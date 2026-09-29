@@ -554,7 +554,7 @@
             }
             migrateOldData(); updateCounters(); updateFilterDropdown(); renderTasks();
             if(backgroundSyncInterval) clearInterval(backgroundSyncInterval);
-            backgroundSyncInterval = setInterval(fetchBackgroundSync, 60000); // 60s
+            backgroundSyncInterval = setInterval(fetchBackgroundSync, 15000); // 15s
         } catch (error) {
             updateSyncStatus('error'); const savedData = localStorage.getItem('sce_tasks_data_v4');
             if (savedData) {
