@@ -1072,10 +1072,10 @@
             </div>
         </div>
 
-        <!-- Nút Cài đặt App về Điện thoại / Máy tính -->
+        <!-- Hướng dẫn cài đặt App (Chỉ hiển thị tại màn hình Đăng nhập) -->
         <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed #e2e8f0; text-align: center;">
             <button type="button" onclick="installPWA()" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 999px; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; font-size: 12px; font-weight: 600; cursor: pointer;">
-                📲 <span>Tải / Cài đặt App về Điện thoại</span>
+                📲 <span>Hướng dẫn cài App về Điện thoại / Máy tính</span>
             </button>
         </div>
     </div>
@@ -1100,12 +1100,9 @@
             </div>
 
             <div class="action-bar-right hide-on-print">
-                <button type="button" id="userInfo" class="user-pill" style="cursor:pointer; border:1px solid #bfdbfe;" onclick="openProfileModal()" title="Thông tin cá nhân, Đổi mật khẩu & Bảo mật 2FA"></button>
-                <button id="btnInstallPwa" class="btn btn-info" style="display:none;" onclick="installPWA()">📲 Cài App</button>
+                <button type="button" id="userInfo" class="user-pill" style="cursor:pointer; border:1px solid #bfdbfe;" onclick="openProfileModal()" title="Đổi tên hiển thị hoặc mật khẩu"></button>
                 <button id="btnAddTask" class="btn btn-add ct-action" onclick="openTaskModal()">➕ Tạo CT / KH</button>
-                <button id="btnManageUsers" class="btn btn-info admin-action" onclick="openUserModal()">👥 Quản lý TK</button>
-                <button id="btnDbConfig" class="btn btn-edit admin-action" onclick="openSupabaseModal()">🗄️ Cấu hình Supabase</button>
-                <button id="btnProfile" class="btn btn-info" onclick="openProfileModal()">🛡️ Bảo mật & 2FA</button>
+                <button id="btnManageUsers" class="btn btn-info admin-action" onclick="openUserModal()">👥 Duyệt & Quản lý TK <span id="pendingUsersBadge" style="display:none; background:#ef4444; color:#fff; border-radius:999px; padding:1px 7px; font-size:11px; font-weight:800; margin-left:4px;">0</span></button>
                 <button id="btnLogout" class="btn btn-logout" onclick="handleLogout()">🔒 Đăng xuất</button>
             </div>
         </header>
@@ -1171,6 +1168,10 @@
             <span class="mob-icon">➕</span>
             <span>Tạo CT</span>
         </button>
+        <button type="button" class="mob-nav-item admin-action" id="mobNavApproveUsers" onclick="openUserModal()">
+            <span class="mob-icon">👥</span>
+            <span>Duyệt TK</span>
+        </button>
         <button type="button" class="mob-nav-item" id="mobNavAccount" onclick="openProfileModal()">
             <span class="mob-icon">👤</span>
             <span id="mobNavAccountText">Tài khoản</span>
@@ -1178,46 +1179,29 @@
     </nav>
 </div>
 
-<!-- MODAL THÔNG TIN CÁ NHÂN, ĐỔI MẬT KHẨU & BẢO MẬT 2FA (CHUẨN /QUANLYDAUTHAU) -->
+<!-- MODAL THÔNG TIN CÁ NHÂN & ĐỔI MẬT KHẨU -->
 <div id="profileModal" class="modal" onclick="if(event.target===this) closeProfileModal()">
-    <div class="modal-content" style="max-width: 440px;">
+    <div class="modal-content" style="max-width: 420px;">
         <div class="modal-drag-handle"></div>
         <div class="modal-header">
-            <h3 style="display:flex; align-items:center; gap:8px;">🛡️ Tài khoản & Bảo mật Supabase Auth</h3>
+            <h3 style="display:flex; align-items:center; gap:8px;">👤 Thông tin Tài khoản & Đổi mật khẩu</h3>
             <span class="close-modal" onclick="closeProfileModal()">&times;</span>
         </div>
         <div class="form-group">
-            <label>Email xác thực (Dùng chung Auth với Quản lý đấu thầu)</label>
+            <label>Email đăng nhập</label>
             <input type="text" id="profileEmail" disabled style="background:#f1f5f9; color:#64748b; cursor:not-allowed;">
         </div>
         <div class="form-group">
-            <label>Vai trò trên Theo dõi nhiệm vụ (<code>sce_tdnv_profiles</code>) & Phòng ban</label>
+            <label>Vai trò & Phòng ban</label>
             <input type="text" id="profileRoleDeptInfo" disabled style="background:#eff6ff; color:#1d4ed8; font-weight:700; cursor:not-allowed;">
         </div>
         <div class="form-group">
             <label>Họ và Tên hiển thị (Chủ trì nhiệm vụ)</label>
-            <input type="text" id="profileFullname" placeholder="VD: Hoàng, Hoa, Đông...">
+            <input type="text" id="profileFullname" placeholder="Nhập tên hiển thị...">
         </div>
         <div class="form-group">
-            <label>Đổi mật khẩu mới (Supabase Auth Bcrypt)</label>
+            <label>Đổi mật khẩu mới</label>
             <input type="password" id="profilePassword" placeholder="Bỏ trống nếu giữ nguyên (tối thiểu 6 ký tự)">
-        </div>
-
-        <!-- Khu vực Cài đặt Xác thực 2 lớp (2FA / TOTP) -->
-        <div style="padding: 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; margin-bottom: 16px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-                <div>
-                    <div style="font-size: 13px; font-weight: 700; color: #1e293b;">🔐 Xác thực 2 yếu tố (2FA / TOTP)</div>
-                    <div id="mfaStatusText" style="font-size: 11.5px; color: #64748b;">Bảo vệ tài khoản bằng Google Authenticator</div>
-                </div>
-                <button type="button" id="btnEnrollMfa" class="btn btn-info" style="font-size: 12px; padding: 6px 10px; min-height: 32px;" onclick="window.startMfaEnrollment()">Thiết lập 2FA</button>
-            </div>
-            <div id="mfaEnrollContainer" class="hidden" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0; text-align: center;">
-                <p style="font-size: 12px; color: #475569; margin: 0 0 8px 0;">Quét mã QR dưới đây bằng ứng dụng <strong>Google Authenticator</strong> hoặc <strong>Authy</strong>:</p>
-                <div id="mfaQrImageContainer" style="background: #fff; padding: 8px; border-radius: 8px; display: inline-block; border: 1px solid #cbd5e1; margin-bottom: 8px;"></div>
-                <input type="text" id="mfaEnrollVerifyCode" maxlength="6" placeholder="Nhập 6 số trên điện thoại..." style="text-align: center; font-family: monospace; font-weight: 700; letter-spacing: 3px; margin-bottom: 8px;">
-                <button type="button" class="btn btn-success" style="width: 100%;" onclick="window.confirmMfaEnrollment()">Kích hoạt 2FA ngay</button>
-            </div>
         </div>
 
         <div style="display: flex; justify-content: space-between; gap: 10px; padding-top: 12px; border-top: 1px solid #eee;">
@@ -1235,16 +1219,16 @@
     <div class="modal-content" style="max-width: 860px;">
         <div class="modal-drag-handle"></div>
         <div class="modal-header">
-            <h3>👥 Quản lý & Phê duyệt Tài khoản (Bảng riêng <code>sce_tdnv_profiles</code>)</h3>
+            <h3>👥 Duyệt & Phân quyền Tài khoản (<code>sce_tdnv_profiles</code>)</h3>
             <span class="close-modal" onclick="closeUserModal()">&times;</span>
         </div>
         <div style="font-size: 12.5px; color: #334155; background: #f8fafc; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
-            <span>💡 Xác thực qua <strong>Supabase Auth</strong> chung với <code>/quanlydauthau</code>, nhưng phân quyền và phê duyệt độc lập trên bảng <code>public.sce_tdnv_profiles</code> (4 vai trò nội bộ, không có chế độ khách).</span>
-            <button type="button" class="btn btn-info" style="font-size: 11.5px; padding: 5px 10px; min-height: 32px;" onclick="syncUsersFromDauThauProfiles()">🔄 Đồng bộ cán bộ từ Đấu thầu (<code>sce_v2_profiles</code>)</button>
+            <span>💡 Các tài khoản mới đăng ký sẽ nằm ở đầu bảng với trạng thái <strong>⏳ Chờ duyệt</strong>. Bấm <strong>"✔️ Duyệt tài khoản"</strong> để cho phép truy cập phần mềm Theo dõi nhiệm vụ.</span>
+            <button type="button" class="btn btn-info" style="font-size: 11.5px; padding: 5px 10px; min-height: 32px;" onclick="syncUsersFromDauThauProfiles()">🔄 Đồng bộ DS từ Quản lý đấu thầu</button>
         </div>
         <div style="margin-bottom: 16px; display: flex; gap: 8px; flex-wrap: wrap; background: #f8fafc; padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
-            <input type="email" id="newEmail" placeholder="Email đăng nhập (VD: hoang@sce.gov.vn)" style="flex: 1.3; min-width: 180px;">
-            <input type="text" id="newFullname" placeholder="Họ tên Chủ trì (VD: Hoàng)" style="flex: 1; min-width: 140px;">
+            <input type="email" id="newEmail" placeholder="Email đăng nhập..." style="flex: 1.3; min-width: 180px;">
+            <input type="text" id="newFullname" placeholder="Họ tên Chủ trì..." style="flex: 1; min-width: 140px;">
             <select id="newDepartment" style="flex: 1; min-width: 160px;">
                 <option value="Phòng Xúc tiến đầu tư">Phòng Xúc tiến đầu tư</option>
                 <option value="Phòng Hành chính - Tổ chức">Phòng Hành chính - Tổ chức</option>
@@ -1267,45 +1251,13 @@
                         <th style="padding: 10px 12px;">Email Auth</th>
                         <th style="padding: 10px 12px;">Họ tên Cán bộ (Chủ trì)</th>
                         <th style="padding: 10px 12px;">Phòng chuyên môn</th>
-                        <th style="padding: 10px 12px;">Vai trò (<code>sce_tdnv_profiles</code>)</th>
+                        <th style="padding: 10px 12px;">Vai trò</th>
                         <th style="padding: 10px 12px;">Trạng thái</th>
-                        <th style="padding: 10px 12px; text-align: center;">Thao tác</th>
+                        <th style="padding: 10px 12px; text-align: center;">Duyệt / Thao tác</th>
                     </tr>
                 </thead>
                 <tbody id="userListBody"></tbody>
             </table>
-        </div>
-    </div>
-</div>
-
-<!-- MODAL CẤU HÌNH SUPABASE & KHỞI TẠO SQL -->
-<div id="supabaseModal" class="modal" onclick="if(event.target===this) closeSupabaseModal()">
-    <div class="modal-content" style="max-width: 700px;">
-        <div class="modal-drag-handle"></div>
-        <div class="modal-header">
-            <h3>🗄️ Kết nối Chung Database Supabase (/quanlydauthau)</h3>
-            <span class="close-modal" onclick="closeSupabaseModal()">&times;</span>
-        </div>
-        <div class="form-group">
-            <label>Supabase Project URL (Dùng chung với Quản lý Đấu thầu SCE)</label>
-            <input type="url" id="sbUrlInput" placeholder="https://xqmeeticiwclsvckpqrd.supabase.co">
-        </div>
-        <div class="form-group">
-            <label>Supabase Anon / Public Key</label>
-            <input type="text" id="sbKeyInput" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
-        </div>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px;">
-            <button class="btn btn-success" onclick="saveSupabaseConfig()">💾 Lưu & Kết nối lại</button>
-            <button class="btn btn-info" onclick="pushLocalDataToSupabase()">☁️ Đồng bộ Dữ liệu & Profile lên Supabase</button>
-            <button class="btn btn-edit" onclick="copySupabaseSql()">📋 Copy SQL Tạo Bảng & Profile Riêng</button>
-        </div>
-        <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-size: 12.5px; color: #334155;">
-            <strong>Kiến trúc dùng chung Supabase Auth nhưng tách biệt Profile:</strong>
-            <ul style="margin: 6px 0 0 18px; padding: 0;">
-                <li><strong>Xác thực (Auth):</strong> Dùng chung hệ thống <code>auth.users</code> (Email/Password, Google OAuth, 2FA TOTP) của <code>/quanlydauthau</code>.</li>
-                <li><strong>Hồ sơ & Phân quyền riêng:</strong> Lưu tại bảng <code>public.sce_tdnv_profiles</code> (4 vai trò nội bộ: <em>chuyenvien, lanhdao, nhaplieu, admin</em> — đã bỏ chế độ khách & mật khẩu plaintext).</li>
-                <li>Bấm <strong>"📋 Copy SQL Tạo Bảng & Profile Riêng"</strong> (hoặc mở file <code>database/supabase_nhiemvu_schema.sql</code>) và chạy trong <strong>Supabase SQL Editor</strong>.</li>
-            </ul>
         </div>
     </div>
 </div>
@@ -1665,8 +1617,6 @@
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredInstallPrompt = e;
-        const btn = document.getElementById('btnInstallPwa');
-        if (btn) btn.style.display = 'inline-flex';
     });
 
     async function installPWA() {
@@ -1674,8 +1624,6 @@
             deferredInstallPrompt.prompt();
             await deferredInstallPrompt.userChoice;
             deferredInstallPrompt = null;
-            const btn = document.getElementById('btnInstallPwa');
-            if (btn) btn.style.display = 'none';
         } else {
             alert("💡 Hướng dẫn cài đặt App ra màn hình chính:\n- Trên iPhone/iPad (Safari): Bấm nút Chia sẻ (Share) -> Chọn 'Thêm vào MH chính' (Add to Home Screen).\n- Trên Android (Chrome) / Máy tính: Bấm biểu tượng Cài đặt (Install) trên thanh địa chỉ trình duyệt.");
         }
@@ -1788,10 +1736,13 @@
         }
     };
 
-    // Đồng bộ danh sách Hồ sơ người dùng từ bảng riêng public.sce_tdnv_profiles
+    // Đồng bộ danh sách Hồ sơ người dùng từ bảng riêng public.sce_tdnv_profiles (kèm fallback & kế thừa Admin từ sce_v2_profiles)
     window.syncProfilesFromSupabase = async function(authUser) {
         if (!supabaseClient || !authUser) return null;
         try {
+            const emailLower = String(authUser.email || '').toLowerCase().trim();
+            const isSystemOwnerEmail = (emailLower === 'blackrider232@gmail.com' || emailLower === 'hoang@sce.gov.vn');
+
             const existingMap = {};
             if (Array.isArray(users)) {
                 users.forEach(u => {
@@ -1800,45 +1751,56 @@
                 });
             }
 
+            // 1. Luôn đọc song song bảng sce_v2_profiles (/quanlydauthau) để nhận diện Admin gốc và các tài khoản vừa đăng ký trên Auth chung
+            let v2Profiles = [];
+            let myV2Profile = null;
+            try {
+                let { data: v2Data, error: v2Err } = await supabaseClient
+                    .from(DAUTHAU_PROFILE_TABLE)
+                    .select('id, email, fullname, role, department, is_active')
+                    .order('created_at', { ascending: true });
+                if (v2Err) {
+                    const fbV2 = await supabaseClient
+                        .from(DAUTHAU_PROFILE_TABLE)
+                        .select('id, email, fullname, role, is_active')
+                        .order('created_at', { ascending: true });
+                    v2Data = fbV2.data;
+                }
+                if (Array.isArray(v2Data)) {
+                    v2Profiles = v2Data;
+                    myV2Profile = v2Profiles.find(p => p.id === authUser.id || (p.email && String(p.email).toLowerCase().trim() === emailLower)) || null;
+                }
+            } catch (e) {}
+
+            // 2. Truy vấn bảng Profile riêng của Theo dõi nhiệm vụ: public.sce_tdnv_profiles
             let { data: profiles, error } = await supabaseClient
                 .from(SUPABASE_PROFILE_TABLE)
                 .select('id, email, fullname, role, department, is_active')
                 .order('created_at', { ascending: true });
 
             if (!error && Array.isArray(profiles)) {
-                let myProfile = profiles.find(p => p.id === authUser.id || (p.email && authUser.email && p.email.toLowerCase() === authUser.email.toLowerCase()));
+                let myProfile = profiles.find(p => p.id === authUser.id || (p.email && String(p.email).toLowerCase().trim() === emailLower));
+                const hasAnyAdmin = profiles.some(p => p.role === 'admin' && p.is_active !== false);
+                const isAdminInV2 = (myV2Profile && myV2Profile.role === 'admin') || isSystemOwnerEmail;
 
                 if (!myProfile) {
-                    // Kiểm tra xem cán bộ này đã được duyệt bên sce_v2_profiles (/quanlydauthau) hoặc nằm trong danh sách cấp quyền trước hay chưa
-                    const emailLower = (authUser.email || '').toLowerCase().trim();
                     const preApproved = users.find(u =>
                         (u.email && u.email.toLowerCase() === emailLower) ||
                         (authUser.user_metadata?.fullname && u.fullname.toLowerCase() === String(authUser.user_metadata.fullname).toLowerCase().trim())
                     );
 
-                    let v2Profile = null;
-                    try {
-                        const { data: v2Data } = await supabaseClient
-                            .from(DAUTHAU_PROFILE_TABLE)
-                            .select('id, email, fullname, role, department, is_active')
-                            .eq('id', authUser.id)
-                            .maybeSingle();
-                        if (v2Data) v2Profile = v2Data;
-                    } catch (e) {}
-
-                    const isFirstUser = profiles.length === 0;
+                    const isFirstUser = profiles.length === 0 || !hasAnyAdmin;
                     let assignedRole = 'chuyenvien';
-                    if (isFirstUser) assignedRole = 'admin';
+                    if (isFirstUser || isAdminInV2) assignedRole = 'admin';
                     else if (preApproved) assignedRole = normalizeTdnvRole(preApproved.role);
-                    else if (v2Profile && v2Profile.role === 'admin') assignedRole = 'admin';
-                    else if (v2Profile && ['leader', 'dept_leader', 'team_lead'].includes(v2Profile.role)) assignedRole = 'lanhdao';
+                    else if (myV2Profile && ['leader', 'dept_leader', 'team_lead'].includes(myV2Profile.role)) assignedRole = 'lanhdao';
 
-                    const assignedActive = isFirstUser
+                    const assignedActive = (isFirstUser || isAdminInV2)
                         ? true
-                        : (preApproved ? (preApproved.is_active !== false) : (v2Profile ? (v2Profile.is_active === true) : false));
+                        : (preApproved ? (preApproved.is_active !== false) : (myV2Profile ? (myV2Profile.is_active === true) : false));
 
-                    const defaultName = preApproved?.fullname || v2Profile?.fullname || authUser.user_metadata?.fullname || authUser.user_metadata?.full_name || authUser.user_metadata?.name || emailLower.split('@')[0];
-                    const defaultDept = preApproved?.department || v2Profile?.department || authUser.user_metadata?.department || 'Phòng Xúc tiến đầu tư';
+                    const defaultName = preApproved?.fullname || myV2Profile?.fullname || authUser.user_metadata?.fullname || authUser.user_metadata?.full_name || authUser.user_metadata?.name || emailLower.split('@')[0];
+                    const defaultDept = preApproved?.department || myV2Profile?.department || authUser.user_metadata?.department || 'Phòng Xúc tiến đầu tư';
 
                     const { data: inserted, error: insErr } = await supabaseClient
                         .from(SUPABASE_PROFILE_TABLE)
@@ -1856,6 +1818,34 @@
                     if (!insErr && inserted) {
                         myProfile = inserted;
                         profiles.push(inserted);
+                    }
+                } else if ((isAdminInV2 || !hasAnyAdmin) && (myProfile.role !== 'admin' || myProfile.is_active === false)) {
+                    // Đảm bảo tài khoản Admin chính không bao giờ bị mất quyền Admin hoặc bị khóa nhầm
+                    myProfile.role = 'admin';
+                    myProfile.is_active = true;
+                    await supabaseClient
+                        .from(SUPABASE_PROFILE_TABLE)
+                        .update({ role: 'admin', is_active: true, updated_at: new Date().toISOString() })
+                        .eq('id', myProfile.id)
+                        .catch(() => {});
+                }
+
+                // Gộp thêm các tài khoản đã đăng ký bên Auth chung (sce_v2_profiles) nhưng chưa có mặt trong sce_tdnv_profiles để Admin thấy và duyệt
+                for (const v2p of v2Profiles) {
+                    const v2Email = String(v2p.email || '').toLowerCase().trim();
+                    if (!v2Email) continue;
+                    const existsInTdnv = profiles.some(tp => tp.id === v2p.id || String(tp.email || '').toLowerCase().trim() === v2Email);
+                    if (!existsInTdnv) {
+                        const mappedRole = v2p.role === 'admin' ? 'admin' : (['leader', 'dept_leader', 'team_lead'].includes(v2p.role) ? 'lanhdao' : 'chuyenvien');
+                        const newEntry = {
+                            id: v2p.id,
+                            email: v2p.email,
+                            fullname: v2p.fullname || v2Email.split('@')[0],
+                            role: mappedRole,
+                            department: v2p.department || 'Phòng Xúc tiến đầu tư',
+                            is_active: v2p.is_active === true
+                        };
+                        profiles.push(newEntry);
                     }
                 }
 
@@ -1875,7 +1865,6 @@
                         };
                     });
 
-                    // Giữ lại các cán bộ được Admin cấp quyền trước trong danh sách (để phân công Chủ trì)
                     Object.values(existingMap).forEach(exUser => {
                         const exEmail = String(exUser.email || '').toLowerCase().trim();
                         const exName = String(exUser.fullname || '').toLowerCase().trim();
@@ -1888,13 +1877,53 @@
 
                     users = sanitizeUsersList(mergedProfiles);
                 }
+                updatePendingUsersBadge();
                 return myProfile;
+            } else if (v2Profiles.length > 0) {
+                // Fallback sang sce_v2_profiles nếu bảng sce_tdnv_profiles chưa được khởi tạo SQL trên Supabase
+                const mappedFromV2 = v2Profiles.map(p => {
+                    const fn = (p.fullname || (p.email ? p.email.split('@')[0] : 'Chuyên viên')).trim();
+                    const mappedRole = p.role === 'admin' ? 'admin' : (['leader', 'dept_leader', 'team_lead'].includes(p.role) ? 'lanhdao' : 'chuyenvien');
+                    return {
+                        id: p.id,
+                        email: p.email,
+                        fullname: fn,
+                        username: fn,
+                        role: mappedRole,
+                        department: p.department || 'Phòng Xúc tiến đầu tư',
+                        is_active: p.is_active !== false
+                    };
+                });
+                users = sanitizeUsersList(mappedFromV2);
+                updatePendingUsersBadge();
+                if (myV2Profile) {
+                    return {
+                        id: myV2Profile.id,
+                        email: myV2Profile.email,
+                        fullname: myV2Profile.fullname || emailLower.split('@')[0],
+                        role: (myV2Profile.role === 'admin' || isSystemOwnerEmail) ? 'admin' : (['leader', 'dept_leader', 'team_lead'].includes(myV2Profile.role) ? 'lanhdao' : 'chuyenvien'),
+                        department: myV2Profile.department || 'Phòng Xúc tiến đầu tư',
+                        is_active: myV2Profile.is_active !== false
+                    };
+                }
             }
         } catch (e) {
-            console.warn("Không thể tải sce_tdnv_profiles (có thể chưa chạy SQL khởi tạo):", e);
+            console.warn("Không thể tải sce_tdnv_profiles:", e);
         }
         return null;
     };
+
+    function updatePendingUsersBadge() {
+        const badge = document.getElementById('pendingUsersBadge');
+        if (!badge) return;
+        const pendingCount = (users || []).filter(u => u.is_active === false).length;
+        if (pendingCount > 0) {
+            badge.innerText = `${pendingCount} chờ duyệt`;
+            badge.style.display = 'inline-block';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
 
     // Hoàn tất phiên đăng nhập sau khi xác thực JWT (và MFA nếu có) - Chuẩn /quanlydauthau
     window.completeAuthenticatedSession = async function(authUser) {
@@ -1907,6 +1936,7 @@
         }
 
         const email = (authUser.email || 'user@sce.gov.vn').toLowerCase().trim();
+        const isSystemOwnerEmail = (email === 'blackrider232@gmail.com' || email === 'hoang@sce.gov.vn');
         const existingInDb = (users || []).find(u =>
             (u.email && u.email.toLowerCase() === email) ||
             (authUser.user_metadata?.fullname && u.fullname.toLowerCase() === String(authUser.user_metadata.fullname).toLowerCase().trim())
@@ -1919,7 +1949,8 @@
             ? String(profile.department).trim()
             : (existingInDb?.department || authUser.user_metadata?.department || 'Phòng Xúc tiến đầu tư');
 
-        if (!profile && !existingInDb && (!users || users.length <= 1)) {
+        const hasAnyActiveAdmin = (users || []).some(u => u.role === 'admin' && u.is_active !== false);
+        if (isSystemOwnerEmail || (!profile && !existingInDb) || !hasAnyActiveAdmin) {
             role = 'admin';
         }
 
@@ -2157,7 +2188,7 @@
 
         const userInfo = document.getElementById('userInfo');
         const btnManageUsers = document.getElementById('btnManageUsers');
-        const btnDbConfig = document.getElementById('btnDbConfig');
+        const mobNavApproveUsers = document.getElementById('mobNavApproveUsers');
         const btnAddTask = document.getElementById('btnAddTask');
         const mobNavAccountText = document.getElementById('mobNavAccountText');
 
@@ -2170,8 +2201,9 @@
         if (mobNavAccountText) mobNavAccountText.innerText = currentUser.fullname || 'Tài khoản';
 
         if (btnManageUsers) btnManageUsers.style.display = (role === 'admin') ? 'inline-flex' : 'none';
-        if (btnDbConfig) btnDbConfig.style.display = (role === 'admin') ? 'inline-flex' : 'none';
+        if (mobNavApproveUsers) mobNavApproveUsers.style.display = (role === 'admin') ? 'flex' : 'none';
         if (btnAddTask) btnAddTask.style.display = (role === 'admin' || role === 'nhaplieu') ? 'inline-flex' : 'none';
+        updatePendingUsersBadge();
     }
 
     window.handleLogout = async function(isAutoTimeout = false) {
@@ -2198,7 +2230,7 @@
     };
 
     // =========================================================================
-    // 3B. MODAL HỒ SƠ CÁ NHÂN, ĐỔI MẬT KHẨU BCRYPT & 2FA TOTP (CHUẨN /QUANLYDAUTHAU)
+    // 3B. MODAL HỒ SƠ CÁ NHÂN & ĐỔI MẬT KHẨU
     // =========================================================================
     window.openProfileModal = async function() {
         if (!currentUser) return;
@@ -2206,81 +2238,11 @@
         document.getElementById('profileRoleDeptInfo').value = `${getRoleLabel(currentUser.role)} — ${currentUser.department || 'Phòng Xúc tiến đầu tư'}`;
         document.getElementById('profileFullname').value = currentUser.fullname || '';
         document.getElementById('profilePassword').value = '';
-        document.getElementById('mfaEnrollContainer').classList.add('hidden');
-
-        try {
-            if (supabaseClient) {
-                const { data: factors } = await supabaseClient.auth.mfa.listFactors();
-                const verified = factors?.totp?.find(f => f.status === 'verified');
-                const statusEl = document.getElementById('mfaStatusText');
-                const btnEl = document.getElementById('btnEnrollMfa');
-                if (verified) {
-                    statusEl.innerHTML = '<span style="color:#059669; font-weight:700;">✅ Đã bật bảo vệ 2 lớp (TOTP)</span>';
-                    btnEl.innerText = 'Hủy 2FA';
-                    btnEl.onclick = () => window.unenrollMfa(verified.id);
-                } else {
-                    statusEl.innerText = 'Bảo vệ tài khoản bằng Google Authenticator';
-                    btnEl.innerText = 'Thiết lập 2FA';
-                    btnEl.onclick = () => window.startMfaEnrollment();
-                }
-            }
-        } catch (e) {}
-
         document.getElementById('profileModal').classList.add('active');
     };
 
     window.closeProfileModal = function() {
         document.getElementById('profileModal').classList.remove('active');
-    };
-
-    window.startMfaEnrollment = async function() {
-        try {
-            const { data, error } = await supabaseClient.auth.mfa.enroll({
-                factorType: 'totp',
-                friendlyName: 'SCE Nhiệm vụ (' + (currentUser.email || currentUser.fullname) + ')'
-            });
-            if (error) throw error;
-            enrollingFactorId = data.id;
-            document.getElementById('mfaQrImageContainer').innerHTML = `<img src="${data.totp.qr_code}" alt="QR 2FA" style="width:160px; height:160px; display:block;">`;
-            document.getElementById('mfaEnrollContainer').classList.remove('hidden');
-        } catch (err) {
-            alert("Lỗi thiết lập 2FA: " + err.message);
-        }
-    };
-
-    window.confirmMfaEnrollment = async function() {
-        const code = document.getElementById('mfaEnrollVerifyCode').value.trim();
-        if (!code || code.length !== 6) {
-            alert("Vui lòng nhập đủ 6 chữ số trên ứng dụng Authenticator!");
-            return;
-        }
-        try {
-            const challenge = await supabaseClient.auth.mfa.challenge({ factorId: enrollingFactorId });
-            if (challenge.error) throw challenge.error;
-            const verify = await supabaseClient.auth.mfa.verify({
-                factorId: enrollingFactorId,
-                challengeId: challenge.data.id,
-                code: code
-            });
-            if (verify.error) throw verify.error;
-            document.getElementById('mfaEnrollContainer').classList.add('hidden');
-            alert("✅ Đã kích hoạt Xác thực 2 lớp (2FA) cho tài khoản của bạn!");
-            window.openProfileModal();
-        } catch (err) {
-            alert("Mã xác thực không hợp lệ: " + err.message);
-        }
-    };
-
-    window.unenrollMfa = async function(factorId) {
-        if (!confirm("Bạn có chắc muốn tắt xác thực 2 lớp (2FA) cho tài khoản này?")) return;
-        try {
-            const { error } = await supabaseClient.auth.mfa.unenroll({ factorId });
-            if (error) throw error;
-            alert("Đã tắt xác thực 2 lớp (2FA).");
-            window.openProfileModal();
-        } catch (err) {
-            alert("Lỗi: " + err.message);
-        }
     };
 
     window.saveProfile = async function() {
@@ -2354,21 +2316,31 @@
         const tbody = document.getElementById('userListBody');
         if (!tbody) return;
         tbody.innerHTML = '';
-        users.forEach((u, index) => {
+
+        // Sắp xếp tài khoản đang Chờ duyệt (is_active === false) lên đầu bảng để Admin dễ thấy và duyệt ngay
+        const indexedUsers = users.map((u, idx) => ({ u, idx }));
+        indexedUsers.sort((a, b) => {
+            const aPending = a.u.is_active === false ? 0 : 1;
+            const bPending = b.u.is_active === false ? 0 : 1;
+            return aPending - bPending;
+        });
+
+        indexedUsers.forEach(({ u, idx: index }) => {
             const isSelf = currentUser && (String(u.email || '').toLowerCase() === String(currentUser.email || '').toLowerCase());
             const isActive = u.is_active !== false;
+            const rowBg = isActive ? '#fff' : '#fffbeb';
             const statusHtml = isActive
-                ? `<span style="display:inline-block; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:700; background:#dcfce7; color:#166534;">✔️ Đã kích hoạt</span>`
-                : `<span style="display:inline-block; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:700; background:#fef3c7; color:#92400e;">⏳ Chờ duyệt / Khóa</span>`;
+                ? `<span style="display:inline-block; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:700; background:#dcfce7; color:#166534;">✔️ Đã duyệt</span>`
+                : `<span style="display:inline-block; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:700; background:#fef3c7; color:#b45309; border:1px solid #f59e0b;">⏳ Chờ phê duyệt</span>`;
 
             const toggleBtn = !isSelf
                 ? (isActive
-                    ? `<button class="btn btn-edit" style="padding:4px 8px; font-size:11px; min-height:28px;" onclick="toggleUserActiveStatus(${index})">🔒 Khóa</button>`
-                    : `<button class="btn btn-success" style="padding:4px 8px; font-size:11px; min-height:28px;" onclick="toggleUserActiveStatus(${index})">✔️ Phê duyệt</button>`)
+                    ? `<button class="btn btn-edit" style="padding:5px 10px; font-size:11.5px; min-height:30px;" onclick="toggleUserActiveStatus(${index})">🔒 Khóa TK</button>`
+                    : `<button class="btn btn-success" style="padding:5px 12px; font-size:12px; min-height:30px; font-weight:700; box-shadow: 0 2px 6px rgba(16,185,129,0.35);" onclick="toggleUserActiveStatus(${index})">✔️ Duyệt tài khoản</button>`)
                 : '';
 
             tbody.innerHTML += `
-                <tr style="border-bottom: 1px solid #eee; background: #fff;">
+                <tr style="border-bottom: 1px solid #eee; background: ${rowBg};">
                     <td style="padding: 10px 12px; font-family: monospace; font-size: 12px;">
                         ${u.email || '---'}
                         ${u.id ? '<span title="Đã liên kết Supabase Auth UUID" style="color:#059669; font-weight:bold;">🛡️</span>' : '<span title="Cấp quyền trước (Chờ đăng ký Auth)" style="color:#64748b; font-size:11px;">(Chờ Auth)</span>'}
@@ -2393,13 +2365,14 @@
                     </td>
                     <td style="padding: 10px 12px;">${statusHtml}</td>
                     <td style="padding: 10px 12px; text-align: center; white-space: nowrap;">
-                        <div style="display:inline-flex; gap:5px; align-items:center;">
+                        <div style="display:inline-flex; gap:6px; align-items:center;">
                             ${toggleBtn}
-                            ${!isSelf ? `<button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px; min-height: 28px;" onclick="deleteUser(${index})">🗑️ Xóa</button>` : '<span style="font-size:11px; color:#888;">Đang dùng</span>'}
+                            ${!isSelf ? `<button class="btn btn-danger" style="padding: 5px 8px; font-size: 11px; min-height: 30px;" onclick="deleteUser(${index})">🗑️ Xóa</button>` : '<span style="font-size:11px; color:#888;">Đang dùng</span>'}
                         </div>
                     </td>
                 </tr>`;
         });
+        updatePendingUsersBadge();
     }
 
     async function toggleUserActiveStatus(index) {
@@ -2411,14 +2384,28 @@
 
         if (supabaseClient && target.id) {
             try {
-                await supabaseClient
+                const { error } = await supabaseClient
                     .from(SUPABASE_PROFILE_TABLE)
-                    .update({ is_active: nextState, updated_at: new Date().toISOString() })
-                    .eq('id', target.id);
+                    .upsert({
+                        id: target.id,
+                        email: target.email,
+                        fullname: target.fullname,
+                        role: target.role || 'chuyenvien',
+                        department: target.department || 'Phòng Xúc tiến đầu tư',
+                        is_active: nextState,
+                        updated_at: new Date().toISOString()
+                    });
+                if (error) {
+                    await supabaseClient
+                        .from(DAUTHAU_PROFILE_TABLE)
+                        .update({ is_active: nextState, updated_at: new Date().toISOString() })
+                        .eq('id', target.id);
+                }
             } catch (e) {}
         }
         await saveData();
         renderUsers();
+        updatePendingUsersBadge();
     }
 
     async function updateUserRoleInline(index, newRole) {
@@ -2748,12 +2735,7 @@
                 updateSyncStatus('synced', 'Đã đẩy dữ liệu lên Supabase');
             }
         } catch (err) {
-            updateSyncStatus('error', 'Chưa tạo bảng sce_tdnv_*');
-            if (currentUser && currentUser.role === 'admin') {
-                openSupabaseModal();
-            } else {
-                alert("Dữ liệu đang được lưu an toàn trên thiết bị. Quản trị viên (Admin) có thể bấm '🗄️ Cấu hình Supabase' để khởi tạo bảng trên đám mây.");
-            }
+            updateSyncStatus('error', 'Lưu nội bộ (Chưa đồng bộ bảng Cloud)');
         }
     }
 
@@ -2793,114 +2775,6 @@
             console.warn("Lưu Supabase thất bại, đã lưu vào bộ nhớ cục bộ:", err);
             updateSyncStatus('error', 'Đã lưu bộ nhớ máy');
         }
-    }
-
-    function openSupabaseModal() {
-        const cfg = getSbConfig();
-        document.getElementById('sbUrlInput').value = cfg.url;
-        document.getElementById('sbKeyInput').value = cfg.key;
-        document.getElementById('supabaseModal').classList.add('active');
-    }
-    function closeSupabaseModal() {
-        document.getElementById('supabaseModal').classList.remove('active');
-    }
-    function saveSupabaseConfig() {
-        const url = document.getElementById('sbUrlInput').value.trim();
-        const key = document.getElementById('sbKeyInput').value.trim();
-        if (!url || !key) { alert("Vui lòng nhập đầy đủ Supabase URL và Anon Key!"); return; }
-        localStorage.setItem('sce_nhiemvu_sb_config', JSON.stringify({ url, key }));
-        initSupabaseClient();
-        closeSupabaseModal();
-        initApp();
-    }
-    async function pushLocalDataToSupabase() {
-        try {
-            updateSyncStatus('syncing', 'Đang đẩy dữ liệu...');
-            await upsertToSupabase({ tasks, users });
-            updateSyncStatus('synced', 'Đã đẩy lên Supabase');
-            alert("✅ Đã đẩy toàn bộ Chương trình, Nhiệm vụ, Công việc lên `sce_tdnv_app_data` thành công!");
-        } catch (err) {
-            updateSyncStatus('error', 'Chưa tạo bảng SQL');
-            alert("⚠️ Bảng `sce_tdnv_profiles` hoặc `sce_tdnv_app_data` chưa tồn tại trên Supabase.\nVui lòng bấm nút '📋 Copy SQL Tạo Bảng & Profile Riêng' và chạy trong mục SQL Editor của Supabase Dashboard trước!");
-        }
-    }
-    function copySupabaseSql() {
-        const sqlScript = `-- KỊCH BẢN KHỞI TẠO BẢNG RIÊNG CHO THEO DÕI NHIỆM VỤ TRÊN CÙNG DATABASE VỚI /QUANLYDAUTHAU
--- Dùng chung Supabase Auth (auth.users), tách bảng Profile riêng public.sce_tdnv_profiles (Không có chế độ khách & không lưu mật khẩu plaintext)
-
-CREATE TABLE IF NOT EXISTS public.sce_tdnv_profiles (
-    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-    email TEXT UNIQUE NOT NULL,
-    fullname TEXT NOT NULL,
-    role TEXT NOT NULL DEFAULT 'chuyenvien' CHECK (role IN ('chuyenvien', 'lanhdao', 'nhaplieu', 'admin')),
-    department TEXT NOT NULL DEFAULT 'Phòng Xúc tiến đầu tư',
-    is_active BOOLEAN NOT NULL DEFAULT false,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS public.sce_tdnv_app_data (
-    id INT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
-    data JSONB NOT NULL,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-    updated_by_email TEXT
-);
-
-CREATE TABLE IF NOT EXISTS public.sce_tdnv_backups (
-    id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-    data JSONB NOT NULL,
-    note TEXT DEFAULT 'Auto-backup on save',
-    created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-    created_by_email TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS public.sce_tdnv_audit_logs (
-    id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-    actor_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-    actor_email TEXT,
-    action TEXT NOT NULL,
-    summary TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE OR REPLACE FUNCTION public.get_my_tdnv_role()
-RETURNS TEXT LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-    SELECT COALESCE((SELECT role FROM public.sce_tdnv_profiles WHERE id = auth.uid() AND is_active = true), 'pending');
-$$;
-
-CREATE OR REPLACE FUNCTION public.is_my_tdnv_account_active()
-RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-    SELECT COALESCE((SELECT is_active FROM public.sce_tdnv_profiles WHERE id = auth.uid()), false);
-$$;
-
-ALTER TABLE public.sce_tdnv_profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.sce_tdnv_app_data ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.sce_tdnv_backups ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.sce_tdnv_audit_logs ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "sce_tdnv_profiles_select_auth" ON public.sce_tdnv_profiles;
-CREATE POLICY "sce_tdnv_profiles_select_auth" ON public.sce_tdnv_profiles FOR SELECT TO authenticated USING (id = auth.uid() OR public.is_my_tdnv_account_active() = true);
-
-DROP POLICY IF EXISTS "sce_tdnv_profiles_insert_self_or_admin" ON public.sce_tdnv_profiles;
-CREATE POLICY "sce_tdnv_profiles_insert_self_or_admin" ON public.sce_tdnv_profiles FOR INSERT TO authenticated WITH CHECK (public.get_my_tdnv_role() = 'admin' OR (id = auth.uid() AND role = 'chuyenvien' AND is_active = false));
-
-DROP POLICY IF EXISTS "sce_tdnv_profiles_update_self_or_admin" ON public.sce_tdnv_profiles;
-CREATE POLICY "sce_tdnv_profiles_update_self_or_admin" ON public.sce_tdnv_profiles FOR UPDATE TO authenticated USING (public.get_my_tdnv_role() = 'admin' OR id = auth.uid()) WITH CHECK (public.get_my_tdnv_role() = 'admin' OR (id = auth.uid() AND role = public.get_my_tdnv_role() AND is_active = public.is_my_tdnv_account_active()));
-
-DROP POLICY IF EXISTS "sce_tdnv_profiles_delete_admin" ON public.sce_tdnv_profiles;
-CREATE POLICY "sce_tdnv_profiles_delete_admin" ON public.sce_tdnv_profiles FOR DELETE TO authenticated USING (public.get_my_tdnv_role() = 'admin');
-
-DROP POLICY IF EXISTS "sce_tdnv_app_data_all_active" ON public.sce_tdnv_app_data;
-CREATE POLICY "sce_tdnv_app_data_all_active" ON public.sce_tdnv_app_data FOR ALL TO authenticated USING (public.is_my_tdnv_account_active() = true) WITH CHECK (public.is_my_tdnv_account_active() = true);
-
-DROP POLICY IF EXISTS "sce_tdnv_backups_all_active" ON public.sce_tdnv_backups;
-CREATE POLICY "sce_tdnv_backups_all_active" ON public.sce_tdnv_backups FOR ALL TO authenticated USING (public.is_my_tdnv_account_active() = true) WITH CHECK (public.is_my_tdnv_account_active() = true);`;
-
-        navigator.clipboard.writeText(sqlScript).then(() => {
-            alert("✅ Đã copy kịch bản SQL khởi tạo bảng bảo mật RLS (sce_tdnv_profiles & sce_tdnv_app_data) vào bộ nhớ tạm!\nHãy dán vào Supabase Dashboard -> SQL Editor (chung Project với Quản lý đấu thầu) và nhấn Run.");
-        });
     }
 
     // =========================================================================
