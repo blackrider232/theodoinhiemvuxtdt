@@ -1,0 +1,3805 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Phần mềm Theo dõi Nhiệm vụ Xúc tiến đầu tư - SCE</title>
+
+    <!-- PWA Manifest & Mobile Web App Meta (Android S25 Ultra, iPhone, Tablet 10", PC 24") -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#004b87">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Nhiệm vụ SCE">
+    <link rel="icon" type="image/png" sizes="192x192" href="app-icon-192.png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="app-icon-192.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="app-icon-512.png">
+
+    <!-- Supabase JS SDK v2 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Thư viện SheetJS để xuất Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #004b87;
+            --primary-hover: #003666;
+            --primary-light: #e3f2fd;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #555555;
+            --danger: #c0392b;
+            --danger-bg: #fce8e6;
+            --success: #1e8e3e;
+            --success-bg: #e6f4ea;
+            --info: #026aa7;
+            --warning: #d35400;
+            --warning-bg: #fdf2e9;
+            --border: #d1d5db;
+            --card-radius: 12px;
+            --card-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --safe-left: env(safe-area-inset-left, 0px);
+            --safe-right: env(safe-area-inset-right, 0px);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100dvh;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        body {
+            padding-top: calc(16px + var(--safe-top));
+            padding-bottom: calc(24px + var(--safe-bottom));
+            padding-left: calc(16px + var(--safe-left));
+            padding-right: calc(16px + var(--safe-right));
+        }
+
+        /* Container tối ưu cho màn hình 24 inch (lên tới 1780px), Tablet 10 inch và Điện thoại */
+        .container {
+            max-width: 1780px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Hệ thống Nút Pastel với Chữ Đen (#000000) chuẩn SCE */
+        .btn {
+            padding: 8px 14px;
+            min-height: 38px;
+            border: 1px solid rgba(0, 0, 0, 0.14);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #000000;
+            transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            gap: 6px;
+            user-select: none;
+            white-space: nowrap;
+            text-decoration: none;
+        }
+        .btn:active { transform: translateY(1px); }
+        .btn-add { background-color: #bae6fd; border-color: #7dd3fc; }
+        .btn-add:hover { background-color: #93c5fd; box-shadow: 0 3px 8px rgba(147, 197, 253, 0.35); }
+        .btn-danger { background-color: #fecdd3; border-color: #fda4af; }
+        .btn-danger:hover { background-color: #fda4af; box-shadow: 0 3px 8px rgba(253, 164, 175, 0.35); }
+        .btn-success { background-color: #bbf7d0; border-color: #86efac; }
+        .btn-success:hover { background-color: #86efac; box-shadow: 0 3px 8px rgba(134, 239, 172, 0.35); }
+        .btn-edit { background-color: #fef08a; border-color: #fde047; }
+        .btn-edit:hover { background-color: #fde047; box-shadow: 0 3px 8px rgba(253, 224, 71, 0.35); }
+        .btn-info { background-color: #a5f3fc; border-color: #67e8f9; }
+        .btn-info:hover { background-color: #67e8f9; box-shadow: 0 3px 8px rgba(103, 232, 249, 0.35); }
+        .btn-logout { background-color: #f1f5f9; border-color: #cbd5e1; }
+        .btn-logout:hover { background-color: #e2e8f0; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08); }
+
+        .btn-attach {
+            background-color: #f3f0ff;
+            border: 1px solid #b197fc;
+            padding: 6px 12px;
+            font-size: 12.5px;
+            font-weight: 600;
+            text-decoration: none;
+            color: #000000;
+            border-radius: 6px;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            max-width: 100%;
+        }
+        .btn-attach:hover { background-color: #e5dbff; box-shadow: 0 2px 5px rgba(177, 151, 252, 0.3); }
+        .btn-attach-text { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px; }
+
+        /* Header Web App */
+        .app-top-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--card-bg);
+            padding: 14px 22px;
+            border-radius: var(--card-radius);
+            box-shadow: var(--card-shadow);
+            margin-bottom: 16px;
+            gap: 16px;
+            flex-wrap: wrap;
+            border-top: 4px solid var(--primary);
+        }
+        .brand-box {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 0;
+        }
+        .brand-logo {
+            height: 54px;
+            width: auto;
+            aspect-ratio: 1 / 1;
+            object-fit: contain;
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+        .brand-text h1 {
+            color: var(--primary);
+            text-transform: uppercase;
+            font-size: clamp(1.05rem, 0.85rem + 0.75vw, 1.45rem);
+            margin: 0;
+            font-weight: 800;
+            letter-spacing: 0.3px;
+            line-height: 1.25;
+        }
+        .brand-text p {
+            margin: 3px 0 0 0;
+            color: var(--text-muted);
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .action-bar-right {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .sync-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12.5px;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 20px;
+            transition: 0.3s;
+            user-select: none;
+            cursor: pointer;
+        }
+        .sync-indicator.synced { color: #000; background: #ebfbee; border: 1px solid #8ce99a; }
+        .sync-indicator.syncing { color: #000; background: #fff9db; border: 1px solid #fcc419; }
+        .sync-indicator.error { color: #000; background: #fff5f5; border: 1px solid #ffa8a8; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .sync-indicator.syncing #syncIcon { display: inline-block; animation: spin 1.5s linear infinite; }
+
+        .user-pill {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--primary);
+            background: var(--primary-light);
+            padding: 6px 14px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Dashboard KPI - Bấm để lọc nhanh */
+        .kpi-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+        .kpi-card {
+            background: var(--card-bg);
+            padding: 14px 18px;
+            border-radius: var(--card-radius);
+            border-left: 5px solid;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+            position: relative;
+            user-select: none;
+        }
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.09);
+        }
+        .kpi-card.active-filter {
+            background-color: #f0f9ff;
+            outline: 2px solid var(--primary);
+        }
+        .kpi-value {
+            font-size: clamp(1.5rem, 1.2rem + 0.8vw, 2rem);
+            font-weight: 800;
+            color: var(--text-main);
+            line-height: 1.15;
+        }
+        .kpi-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-top: 4px;
+        }
+
+        /* Thanh Lọc & Công cụ điều khiển */
+        .filter-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            background: var(--card-bg);
+            padding: 12px 16px;
+            border-radius: var(--card-radius);
+            box-shadow: var(--card-shadow);
+            align-items: center;
+            position: sticky;
+            top: 8px;
+            z-index: 90;
+        }
+        .search-input {
+            flex: 2;
+            min-width: 220px;
+            background-color: #f8fafc !important;
+            border-color: #cbd5e1 !important;
+        }
+        .filter-select {
+            flex: 1;
+            min-width: 165px;
+            background-color: #f8fafc !important;
+            border-color: #cbd5e1 !important;
+        }
+        .toolbar-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-left: auto;
+        }
+
+        /* Chuyển đổi chế độ cột trên màn hình lớn 24 inch */
+        .view-switcher {
+            display: inline-flex;
+            background: #f1f5f9;
+            padding: 3px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            gap: 2px;
+        }
+        .view-btn {
+            border: none;
+            background: transparent;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #475569;
+        }
+        .view-btn.active {
+            background: #ffffff;
+            color: var(--primary);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* Inputs & Form */
+        input[type="text"], input[type="password"], input[type="url"], input[type="date"], select, textarea {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background: #fff;
+            color: #000;
+            width: 100%;
+            font-family: inherit;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 75, 135, 0.12);
+        }
+
+        .file-links-display { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; width: 100%; }
+        .link-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; align-items: center; width: 100%; }
+        .link-row input[type="text"] { flex: 1; min-width: 120px; }
+        .link-row input[type="url"] { flex: 2; min-width: 180px; }
+        .btn-remove-link {
+            background-color: #fecdd3;
+            color: #000;
+            border: 1px solid #fda4af;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        /* Modal Popup Trung Tâm (Desktop/Tablet) & Bottom Sheet (Mobile S25 Ultra/iPhone) */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100dvh;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+            padding: 16px;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background-color: var(--card-bg);
+            padding: 24px 28px;
+            border-radius: 14px;
+            width: 100%;
+            max-width: 620px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+            animation: slideIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.15);
+            max-height: 90dvh;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+        .modal-drag-handle {
+            display: none;
+            width: 42px;
+            height: 5px;
+            background: #cbd5e1;
+            border-radius: 10px;
+            margin: 0 auto 12px auto;
+        }
+        @keyframes slideIn {
+            from { transform: translateY(20px) scale(0.97); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #f0f2f5;
+            padding-bottom: 12px;
+        }
+        .modal-header h3 { margin: 0; color: var(--primary); font-size: 18px; font-weight: 700; }
+        .close-modal {
+            font-size: 28px;
+            cursor: pointer;
+            color: #64748b;
+            line-height: 1;
+            width: 36px;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        .close-modal:hover { color: var(--danger); background: #fee2e2; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+        .form-group label { font-weight: 600; font-size: 13px; color: #334155; }
+        .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+        /* Layout Lưới Nhiệm vụ thích ứng từ Điện thoại -> Tablet 10" -> Màn hình 24" */
+        .task-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+            gap: 20px;
+            align-items: start;
+        }
+        .task-list.cols-1 { grid-template-columns: 1fr !important; }
+        .task-list.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+        .task-list.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+
+        /* Container Query cho từng Card Chương trình */
+        .task-card-wrapper {
+            container-type: inline-size;
+            width: 100%;
+        }
+
+        .task-card {
+            background: var(--card-bg);
+            border-radius: var(--card-radius);
+            padding: 18px 20px;
+            box-shadow: var(--card-shadow);
+            transition: box-shadow 0.25s, transform 0.2s;
+            width: 100%;
+            border: 1px solid var(--border);
+            border-left: 6px solid var(--primary);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .task-card:hover { box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08); }
+
+        .task-card.urgent {
+            border-left-color: var(--danger);
+            background-color: #fffaf9;
+            border-right-color: #f5c2c7;
+            border-top-color: #f5c2c7;
+            border-bottom-color: #f5c2c7;
+        }
+        .task-card.warning {
+            border-left-color: var(--warning);
+            background-color: #fdf8f4;
+            border-right-color: #fae5d3;
+            border-top-color: #fae5d3;
+            border-bottom-color: #fae5d3;
+        }
+        .task-card.completed {
+            border-left-color: var(--success);
+            opacity: 0.88;
+        }
+
+        .task-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+        .task-title-area { flex: 1; min-width: 0; }
+        .task-title {
+            font-size: 16.5px;
+            font-weight: 700;
+            margin: 0 0 6px 0;
+            word-wrap: break-word;
+            color: var(--primary);
+            line-height: 1.4;
+        }
+        .task-actions { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+
+        .progress-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 6px;
+        }
+        .progress-bg {
+            background: #e2e8f0;
+            border-radius: 10px;
+            height: 7px;
+            flex: 1;
+            overflow: hidden;
+        }
+        .progress-bar { height: 100%; transition: width 0.4s ease; }
+        .progress-label { font-size: 11.5px; font-weight: 700; color: #475569; white-space: nowrap; }
+
+        .urgent-text { color: var(--danger); font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 5px; }
+        .warning-text { color: var(--warning); font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 5px; }
+
+        /* Subtask - Nhiệm vụ cấp 2 */
+        .subtasks-wrapper { margin-top: 4px; border-top: 2px dashed #e2e8f0; padding-top: 14px; }
+        .subtasks-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 8px; flex-wrap: wrap; }
+        .subtasks-header-row h4 { margin: 0; font-size: 13.5px; color: var(--text-main); font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
+
+        .subtask-item {
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            font-size: 13px;
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+            overflow: hidden;
+        }
+        .subtask-item.subtask-overdue { border-color: var(--danger); border-left: 4px solid var(--danger); }
+        .subtask-item.subtask-warning { border-color: var(--warning); border-left: 4px solid var(--warning); }
+        .subtask-item.subtask-completed { border-color: #bce4c8; border-left: 4px solid var(--success); opacity: 0.88; }
+
+        .subtask-summary {
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 12px 14px;
+            background: #f8fafc;
+            transition: 0.2s;
+        }
+        .subtask-summary:hover { background: #f1f5f9; }
+        .subtask-item.expanded .subtask-summary { background: #fff; border-bottom: 1px solid var(--border); }
+
+        .subtask-item.subtask-overdue .subtask-summary { background: var(--danger-bg); }
+        .subtask-item.subtask-warning .subtask-summary { background: var(--warning-bg); }
+        .subtask-item.subtask-completed .subtask-summary { background: var(--success-bg); }
+
+        .st-title-sum { font-weight: 600; font-size: 14px; color: var(--text-main); line-height: 1.45; }
+        .st-title-sum.text-truncate {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .subtask-item.expanded .st-title-sum.text-truncate {
+            display: block;
+            -webkit-line-clamp: unset;
+        }
+        .subtask-item.subtask-overdue .st-title-sum { color: var(--danger); }
+        .subtask-item.subtask-warning .st-title-sum { color: var(--warning); }
+        .subtask-item.subtask-completed .st-title-sum { color: var(--success); text-decoration: line-through; }
+
+        .st-meta-sum { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            color: #000;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            letter-spacing: 0.2px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        .bg-danger { background: #ffe3e3; }
+        .bg-warning { background: #ffec99; }
+        .bg-success { background: #d3f9d8; }
+        .bg-secondary { background: #f1f3f5; }
+        .bg-info { background: #d0ebff; }
+
+        .subtask-full-content { display: none; padding: 14px; color: var(--text-main); background: #fff; }
+        .subtask-item.expanded .subtask-full-content { display: block; }
+        .info-grid { display: grid; grid-template-columns: auto 1fr; gap: 7px 12px; align-items: baseline; font-size: 13px; }
+        .info-grid strong { color: #475569; font-size: 12px; text-transform: uppercase; letter-spacing: 0.2px; white-space: nowrap; }
+
+        /* Works - Công việc cấp 3 */
+        .work-list-container { margin-top: 12px; border-top: 1px dashed var(--border); padding-top: 12px; }
+        .work-item {
+            background: #fafafa;
+            border: 1px solid var(--border);
+            border-left: 4px solid #94a3b8;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+        }
+        .work-item.work-overdue { border-left-color: var(--danger); background: var(--danger-bg); border-color: #fad3d0; }
+        .work-item.work-warning { border-left-color: var(--warning); background: var(--warning-bg); border-color: #fae5d3; }
+        .work-item.work-completed { opacity: 0.75; border-left-color: var(--success); background: #f8fafc; }
+
+        /* Container query thích ứng nội bộ thẻ */
+        @supports (container-type: inline-size) {
+            @container (max-width: 420px) {
+                .task-header { flex-direction: column; }
+                .task-actions { width: 100%; justify-content: flex-start; }
+            }
+        }
+
+        /* PHÂN QUYỀN 5 VAI TRÒ (guest, chuyenvien, lanhdao, nhaplieu, admin) */
+        body.read-only-mode #taskList .btn-edit,
+        body.read-only-mode #taskList .btn-danger,
+        body.read-only-mode #taskList .btn-success,
+        body.read-only-mode #taskList .btn-add { display: none !important; }
+        .ct-action, .st-action, .work-action, .approve-action, .admin-action { display: none !important; }
+        body[data-role="admin"] .ct-action,
+        body[data-role="admin"] .st-action,
+        body[data-role="admin"] .work-action,
+        body[data-role="admin"] .approve-action,
+        body[data-role="admin"] .admin-action { display: inline-flex !important; }
+        body[data-role="nhaplieu"] .ct-action,
+        body[data-role="nhaplieu"] .st-action,
+        body[data-role="nhaplieu"] .work-action,
+        body[data-role="nhaplieu"] .approve-action { display: inline-flex !important; }
+        body[data-role="lanhdao"] .approve-action { display: inline-flex !important; }
+        body[data-role="chuyenvien"] .work-action { display: inline-flex !important; }
+
+        /* Thanh điều hướng đáy (Bottom Navigation) chuyên biệt cho Điện thoại S25 Ultra & iPhone */
+        .mobile-bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid var(--border);
+            padding: 6px 8px calc(6px + var(--safe-bottom)) 8px;
+            z-index: 900;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
+        }
+        .mob-nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            padding: 6px 4px;
+            border: none;
+            background: transparent;
+            color: #475569;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            min-height: 44px;
+        }
+        .mob-nav-item .mob-icon { font-size: 17px; line-height: 1; }
+        .mob-nav-item.active { color: var(--primary); background: #eff6ff; font-weight: 700; }
+
+        /* ============================================================================
+           RESPONSIVE BREAKPOINTS CHO 4 DÒNG THIẾT BỊ MỤC TIÊU
+           1. Màn hình 24 inch (Desktop ≥ 1440px)
+           2. Máy tính bảng 10 inch (768px - 1199px)
+           3. Điện thoại S25 Ultra & iPhone (≤ 767px)
+           ============================================================================ */
+
+        /* 1. Màn hình 24 inch (Full HD 1920x1080 & QHD) */
+        @media (min-width: 1440px) {
+            body { padding: 22px 32px; }
+            .task-list:not(.cols-1):not(.cols-2) {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+
+        /* 2. Máy tính bảng 10 inch (iPad / Galaxy Tab: 768px - 1199px) */
+        @media (min-width: 768px) and (max-width: 1199px) {
+            body { padding: 16px 20px; }
+            .kpi-bar { grid-template-columns: repeat(4, 1fr); gap: 12px; }
+            .task-list:not(.cols-1) {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 16px;
+            }
+            .view-switcher { display: none; }
+        }
+
+        /* 3. Điện thoại Android S25 Ultra (~412-448px) & iPhone (~375-430px) */
+        @media (max-width: 767px) {
+            body {
+                padding-top: calc(10px + var(--safe-top));
+                padding-left: calc(10px + var(--safe-left));
+                padding-right: calc(10px + var(--safe-right));
+                padding-bottom: calc(82px + var(--safe-bottom)); /* Chừa chỗ cho Bottom Nav */
+            }
+            .app-top-banner {
+                padding: 12px 14px;
+                gap: 10px;
+            }
+            .brand-logo { height: 42px; }
+            .brand-text h1 { font-size: 16px; }
+            .brand-text p { font-size: 11.5px; }
+            .action-bar-right {
+                width: 100%;
+                justify-content: space-between;
+                padding-top: 8px;
+                border-top: 1px solid #f1f5f9;
+            }
+            .kpi-bar {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            .kpi-card { padding: 12px 14px; }
+            .kpi-value { font-size: 22px; }
+            .kpi-label { font-size: 11px; }
+
+            .filter-bar {
+                position: static;
+                padding: 12px;
+                gap: 8px;
+            }
+            .search-input, .filter-select {
+                min-width: 100%;
+                flex: 1 1 100%;
+                font-size: 16px !important; /* Chống iOS Safari auto-zoom khi focus */
+                min-height: 44px;
+            }
+            .toolbar-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+            .toolbar-actions .btn {
+                flex: 1;
+                min-height: 42px;
+            }
+            .view-switcher { display: none; }
+
+            .task-list {
+                grid-template-columns: 1fr !important;
+                gap: 14px;
+            }
+            .task-card { padding: 14px; }
+            .btn { min-height: 40px; padding: 8px 12px; }
+
+            /* Input 16px trên Mobile chống zoom iOS */
+            input[type="text"], input[type="password"], input[type="url"], input[type="date"], select, textarea {
+                font-size: 16px !important;
+                min-height: 44px;
+            }
+            .form-row-2 { grid-template-columns: 1fr; gap: 10px; }
+
+            /* Modal chuyển thành Bottom Sheet trên S25 Ultra & iPhone */
+            .modal {
+                align-items: flex-end;
+                padding: 0;
+            }
+            .modal-content {
+                border-radius: 20px 20px 0 0;
+                padding: 14px 18px calc(20px + var(--safe-bottom)) 18px;
+                max-height: 92dvh;
+                max-width: 100%;
+                animation: slideUpSheet 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+            .modal-drag-handle { display: block; }
+            @keyframes slideUpSheet {
+                from { transform: translateY(100%); }
+                to { transform: translateY(0); }
+            }
+
+            .mobile-bottom-nav { display: flex; }
+        }
+
+        /* MÀN HÌNH ĐĂNG NHẬP TOÀN MÀN HÌNH (CHUẨN /QUANLYDAUTHAU - BỎ CHẾ ĐỘ KHÁCH) */
+        .hidden { display: none !important; }
+        .login-screen-overlay {
+            min-height: 100dvh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #eff6ff 0%, #e2e8f0 100%);
+            padding: 20px 16px;
+        }
+        .login-card-v2 {
+            background: #ffffff;
+            width: 100%;
+            max-width: 400px;
+            border-radius: 18px;
+            padding: 28px 26px;
+            box-shadow: 0 20px 40px -10px rgba(0, 75, 135, 0.18), 0 4px 12px rgba(15, 23, 42, 0.06);
+            border-top: 4px solid #2563eb;
+        }
+        .login-brand-header {
+            text-align: center;
+            margin-bottom: 22px;
+        }
+        .login-brand-header img {
+            height: 64px;
+            width: auto;
+            margin: 0 auto 12px auto;
+            display: block;
+            object-fit: contain;
+            border-radius: 10px;
+        }
+        .login-brand-header h2 {
+            margin: 0;
+            font-size: 19px;
+            font-weight: 800;
+            color: #1e3a8a;
+            text-transform: uppercase;
+            letter-spacing: -0.2px;
+        }
+        .login-brand-header p {
+            margin: 4px 0 0 0;
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 500;
+        }
+        .auth-alert {
+            margin-bottom: 14px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-size: 12.5px;
+            font-weight: 600;
+            text-align: center;
+            line-height: 1.45;
+        }
+        .auth-alert-error {
+            background: #fef2f2;
+            border: 1px solid #fca5a5;
+            color: #b91c1c;
+        }
+        .auth-alert-success {
+            background: #ecfdf5;
+            border: 1px solid #6ee7b7;
+            color: #047857;
+        }
+        .auth-field {
+            margin-bottom: 14px;
+            text-align: left;
+        }
+        .auth-field label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 5px;
+        }
+        .auth-input {
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 14px;
+            color: #1e293b;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .auth-input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+        .auth-pass-wrap {
+            position: relative;
+        }
+        .auth-pass-toggle {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 4px;
+        }
+        .btn-auth-primary {
+            width: 100%;
+            background: #2563eb;
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            padding: 11px 16px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
+            transition: background 0.18s, transform 0.1s;
+        }
+        .btn-auth-primary:hover { background: #1d4ed8; }
+        .btn-auth-google {
+            width: 100%;
+            background: #ffffff;
+            color: #334155;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 10px 16px;
+            font-size: 13.5px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: background 0.18s;
+        }
+        .btn-auth-google:hover { background: #f8fafc; }
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            margin: 14px 0;
+            color: #94a3b8;
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+        .auth-divider::before, .auth-divider::after {
+            content: "";
+            flex: 1;
+            border-top: 1px solid #e2e8f0;
+        }
+        .auth-divider span { padding: 0 10px; }
+        .mfa-box {
+            padding: 12px;
+            background: #fffbeb;
+            border: 1px solid #fcd34d;
+            border-radius: 12px;
+            margin-bottom: 14px;
+            text-align: center;
+        }
+        .loader-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+        }
+        .loader-box {
+            background: #ffffff;
+            padding: 22px 28px;
+            border-radius: 14px;
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.25);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            color: #1e3a8a;
+        }
+        .spinner-ring {
+            width: 36px;
+            height: 36px;
+            border: 4px solid #dbeafe;
+            border-top-color: #2563eb;
+            border-radius: 50%;
+            animation: spinRing 0.8s linear infinite;
+        }
+        @keyframes spinRing { to { transform: rotate(360deg); } }
+
+        /* ĐỊNH DẠNG BẢN IN (PRINT CSS) */
+        @media print {
+            body { background: #fff; color: #000; padding: 0; margin: 0; }
+            .login-screen-overlay, .loader-overlay, .action-bar-right, .kpi-bar, .filter-bar, .btn, .modal, .sync-indicator, .file-links-display, .mobile-bottom-nav { display: none !important; }
+            .app-top-banner { box-shadow: none; border: none; padding: 0 0 15px 0; }
+            .container { max-width: 100%; width: 100%; margin: 0; padding: 0; }
+            .task-list { display: block; }
+            .task-card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; margin-bottom: 20px; border-left-width: 2px; padding: 15px; }
+            .subtask-item { border: 1px solid #ddd; border-left-width: 4px; break-inside: avoid; }
+            .subtask-summary { background: #f9f9f9 !important; border-bottom: 1px solid #ddd; }
+            .subtask-full-content { display: block !important; padding: 10px; }
+            .badge { border: 1px solid #999; background: transparent !important; color: #000 !important; }
+            .progress-row { display: none; }
+        }
+    </style>
+</head>
+<body data-role="chuyenvien">
+
+<!-- LOADER ĐỒNG BỘ BẢO MẬT -->
+<div id="loader" class="loader-overlay">
+    <div class="loader-box">
+        <div class="spinner-ring"></div>
+        <span id="loaderText">Đang đồng bộ phiên bảo mật...</span>
+    </div>
+</div>
+
+<!-- MÀN HÌNH ĐĂNG NHẬP CHUẨN /QUANLYDAUTHAU (BỎ CHẾ ĐỘ KHÁCH & ĐĂNG NHẬP NHANH THEO TÊN) -->
+<div id="loginScreen" class="login-screen-overlay">
+    <div class="login-card-v2">
+        <div class="login-brand-header">
+            <img src="Logo.jpg" alt="Logo SCE" onerror="this.onerror=null; this.src='app-icon-192.png';">
+            <h2>THEO DÕI NHIỆM VỤ SCE</h2>
+            <p>Trung tâm Xúc tiến đầu tư và Hỗ trợ doanh nghiệp Hà Nội</p>
+        </div>
+
+        <div id="loginError" class="auth-alert auth-alert-error hidden"></div>
+        <div id="loginSuccess" class="auth-alert auth-alert-success hidden"></div>
+
+        <!-- FORM ĐĂNG NHẬP (EMAIL + PASSWORD / GOOGLE OAUTH / 2FA) -->
+        <div id="authFormLogin">
+            <div class="auth-field">
+                <label for="loginUser">Email đăng nhập</label>
+                <input type="email" id="loginUser" autocomplete="email" class="auth-input" placeholder="Nhập email của bạn..." onkeypress="if(event.key === 'Enter') window.handleLogin()">
+            </div>
+            <div class="auth-field">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                    <label for="loginPass" style="margin-bottom: 0;">Mật khẩu</label>
+                    <button type="button" onclick="window.handleForgotPassword()" style="background:none; border:none; color:#2563eb; font-size:12px; font-weight:600; cursor:pointer; padding:0;">Quên mật khẩu?</button>
+                </div>
+                <div class="auth-pass-wrap">
+                    <input type="password" id="loginPass" autocomplete="current-password" class="auth-input" style="padding-right: 38px;" placeholder="••••••••" onkeypress="if(event.key === 'Enter') window.handleLogin()">
+                    <button type="button" class="auth-pass-toggle" onclick="const p=document.getElementById('loginPass'); p.type=p.type==='password'?'text':'password';" title="Hiện/Ẩn mật khẩu">👁️</button>
+                </div>
+            </div>
+
+            <!-- Khung nhập mã 2FA (TOTP) chỉ hiện khi tài khoản có bật 2FA -->
+            <div id="mfaVerifyBox" class="mfa-box hidden">
+                <label style="display:block; font-size:12px; font-weight:700; color:#92400e; margin-bottom:6px;">Mã xác thực 2 lớp (6 số)</label>
+                <input type="text" id="loginMfaCode" maxlength="6" inputmode="numeric" class="auth-input" style="text-align:center; font-size:18px; font-family:monospace; letter-spacing:4px; font-weight:800; margin-bottom:8px;" placeholder="000000" onkeypress="if(event.key === 'Enter') window.verifyMfaAndProceed()">
+                <button type="button" onclick="window.verifyMfaAndProceed()" class="btn-auth-primary" style="background:#d97706;">Xác nhận 2FA</button>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+                <input type="checkbox" id="rememberMe" checked style="width: 16px; height: 16px; cursor: pointer;">
+                <label for="rememberMe" style="font-size: 12.5px; color: #475569; cursor: pointer; font-weight: 500;">Ghi nhớ đăng nhập</label>
+            </div>
+
+            <button type="button" onclick="window.handleLogin()" class="btn-auth-primary">Đăng nhập</button>
+
+            <div class="auth-divider"><span>Hoặc</span></div>
+
+            <button type="button" onclick="window.handleGoogleLogin()" class="btn-auth-google">
+                <svg style="width:16px; height:16px;" viewBox="0 0 24 24">
+                    <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.4 1 3.5 3.6 1.6 7.4l3.7 2.8C6.2 7.2 8.9 5 12 5z"/>
+                    <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.6l3.7 2.9c2.2-2 3.7-5 3.7-8.7z"/>
+                    <path fill="#FBBC05" d="M5.3 14.8c-.2-.8-.4-1.6-.4-2.5s.2-1.7.4-2.5L1.6 7C.6 9 0 11.2 0 13.5s.6 4.5 1.6 6.5l3.7-2.9z"/>
+                    <path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3.1 0-5.8-2.1-6.7-5l-3.7 2.8C3.5 21.4 7.4 24 12 24z"/>
+                </svg>
+                <span>Đăng nhập với Google</span>
+            </button>
+
+            <div style="text-align: center; margin-top: 14px; padding-top: 12px; border-top: 1px solid #f1f5f9; font-size: 12.5px; color: #64748b;">
+                Chưa có tài khoản? <button type="button" onclick="window.switchAuthMode('register')" style="background:none; border:none; color:#2563eb; font-weight:700; cursor:pointer; padding:0;">Đăng ký tài khoản</button>
+            </div>
+        </div>
+
+        <!-- FORM ĐĂNG KÝ TÀI KHOẢN (SUPABASE AUTH) -->
+        <div id="authFormRegister" class="hidden">
+            <div class="auth-field">
+                <label for="regFullname">Họ và tên cán bộ</label>
+                <input type="text" id="regFullname" class="auth-input" placeholder="VD: Hoàng, Nguyễn Văn A...">
+            </div>
+            <div class="auth-field">
+                <label for="regDepartment">Phòng chuyên môn</label>
+                <select id="regDepartment" class="auth-input">
+                    <option value="Phòng Xúc tiến đầu tư">Phòng Xúc tiến đầu tư</option>
+                    <option value="Phòng Hành chính - Tổ chức">Phòng Hành chính - Tổ chức</option>
+                    <option value="Phòng Phát triển doanh nghiệp">Phòng Phát triển doanh nghiệp</option>
+                    <option value="Phòng Tư vấn doanh nghiệp">Phòng Tư vấn doanh nghiệp</option>
+                </select>
+            </div>
+            <div class="auth-field">
+                <label for="regEmail">Email đăng nhập</label>
+                <input type="email" id="regEmail" class="auth-input" placeholder="Nhập email của bạn...">
+            </div>
+            <div class="auth-field">
+                <label for="regPassword">Mật khẩu (tối thiểu 6 ký tự)</label>
+                <input type="password" id="regPassword" class="auth-input" placeholder="••••••••">
+            </div>
+            <button type="button" onclick="window.handleRegisterAuth()" class="btn-auth-primary">Đăng ký</button>
+            <div style="text-align: center; margin-top: 14px; padding-top: 12px; border-top: 1px solid #f1f5f9; font-size: 12.5px; color: #64748b;">
+                Đã có tài khoản? <button type="button" onclick="window.switchAuthMode('login')" style="background:none; border:none; color:#2563eb; font-weight:700; cursor:pointer; padding:0;">Quay lại Đăng nhập</button>
+            </div>
+        </div>
+
+        <!-- Nút Cài đặt App về Điện thoại / Máy tính -->
+        <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed #e2e8f0; text-align: center;">
+            <button type="button" onclick="installPWA()" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 999px; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; font-size: 12px; font-weight: 600; cursor: pointer;">
+                📲 <span>Tải / Cài đặt App về Điện thoại</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MÀN HÌNH ỨNG DỤNG CHÍNH (CHỈ HIỂN THỊ SAU KHI ĐĂNG NHẬP THÀNH CÔNG) -->
+<div id="appScreen" class="hidden">
+    <div class="container" id="mainApp">
+        <!-- Top Banner tích hợp Header & Thanh công cụ -->
+        <header class="app-top-banner">
+            <div class="brand-box">
+                <img src="Logo.jpg" alt="Logo SCE" class="brand-logo" onerror="this.src='app-icon-192.png'">
+                <div class="brand-text">
+                    <h1>Phần mềm Theo dõi Nhiệm vụ Xúc tiến đầu tư</h1>
+                    <p>
+                        <span>Trung tâm Xúc tiến Đầu tư và Hỗ trợ Doanh nghiệp Hà Nội (SCE)</span>
+                        <span id="syncStatusIndicator" class="sync-indicator syncing" onclick="manualSyncNow()" title="Bấm để đồng bộ ngay với Supabase Cloud">
+                            <span id="syncIcon">☁️🔄</span> <span id="syncText">Đang kết nối Supabase...</span>
+                        </span>
+                    </p>
+                </div>
+            </div>
+
+            <div class="action-bar-right hide-on-print">
+                <button type="button" id="userInfo" class="user-pill" style="cursor:pointer; border:1px solid #bfdbfe;" onclick="openProfileModal()" title="Thông tin cá nhân, Đổi mật khẩu & Bảo mật 2FA"></button>
+                <button id="btnInstallPwa" class="btn btn-info" style="display:none;" onclick="installPWA()">📲 Cài App</button>
+                <button id="btnAddTask" class="btn btn-add ct-action" onclick="openTaskModal()">➕ Tạo CT / KH</button>
+                <button id="btnManageUsers" class="btn btn-info admin-action" onclick="openUserModal()">👥 Quản lý TK</button>
+                <button id="btnDbConfig" class="btn btn-edit admin-action" onclick="openSupabaseModal()">🗄️ Cấu hình Supabase</button>
+                <button id="btnProfile" class="btn btn-info" onclick="openProfileModal()">🛡️ Bảo mật & 2FA</button>
+                <button id="btnLogout" class="btn btn-logout" onclick="handleLogout()">🔒 Đăng xuất</button>
+            </div>
+        </header>
+
+        <!-- KPI Dashboard (Bấm vào từng thẻ để lọc nhanh) -->
+        <section class="kpi-bar hide-on-print">
+            <div class="kpi-card active-filter" id="kpiCardAll" style="border-color: var(--primary);" onclick="setStatusFilter('all')">
+                <div class="kpi-value" id="kpiTotal">0</div>
+                <div class="kpi-label">Tổng Chương trình (Tất cả)</div>
+            </div>
+            <div class="kpi-card" id="kpiCardActive" style="border-color: var(--info);" onclick="setStatusFilter('active')">
+                <div class="kpi-value" id="kpiActive">0</div>
+                <div class="kpi-label">Nhiệm vụ đang làm</div>
+            </div>
+            <div class="kpi-card" id="kpiCardWarning" style="border-color: var(--warning);" onclick="setStatusFilter('warning')">
+                <div class="kpi-value" id="kpiWarning">0</div>
+                <div class="kpi-label">⏳ Sắp đến hạn (≤ 2 ngày)</div>
+            </div>
+            <div class="kpi-card" id="kpiCardOverdue" style="border-color: var(--danger);" onclick="setStatusFilter('overdue')">
+                <div class="kpi-value" id="kpiOverdue">0</div>
+                <div class="kpi-label">⚠️ Chậm tiến độ / Quá hạn</div>
+            </div>
+        </section>
+
+        <!-- Bộ lọc & Công cụ điều khiển -->
+        <section class="filter-bar hide-on-print">
+            <input type="text" id="searchInput" class="search-input" placeholder="🔍 Tìm chương trình, nhiệm vụ, công việc, kết quả..." oninput="renderTasks()">
+            <select id="filterUser" class="filter-select" onchange="renderTasks()">
+                <option value="">👤 Lọc theo Chủ trì (Tất cả)</option>
+            </select>
+            <div class="toolbar-actions">
+                <div class="view-switcher" title="Chế độ hiển thị cột trên màn hình lớn">
+                    <button type="button" class="view-btn active" id="viewAuto" onclick="setGridLayout('auto')">Tự động</button>
+                    <button type="button" class="view-btn" id="viewCols3" onclick="setGridLayout('cols-3')">3 Cột (24")</button>
+                    <button type="button" class="view-btn" id="viewCols2" onclick="setGridLayout('cols-2')">2 Cột</button>
+                    <button type="button" class="view-btn" id="viewCols1" onclick="setGridLayout('cols-1')">1 Cột</button>
+                </div>
+                <button type="button" class="btn btn-logout" id="btnToggleExpandAll" onclick="toggleExpandAll()">📂 Mở rộng tất cả</button>
+                <button type="button" class="btn btn-success" onclick="exportExcel()">📊 Xuất Excel</button>
+                <button type="button" class="btn btn-logout" onclick="window.print()">🖨️ In Báo cáo</button>
+            </div>
+        </section>
+
+        <!-- Danh sách Chương trình / Nhiệm vụ / Công việc -->
+        <main class="task-list" id="taskList"></main>
+    </div>
+
+    <!-- Thanh điều hướng đáy cho Điện thoại (Android S25 Ultra & iPhone) -->
+    <nav class="mobile-bottom-nav hide-on-print">
+        <button type="button" class="mob-nav-item active" id="mobNavAll" onclick="setStatusFilter('all'); window.scrollTo({top:0, behavior:'smooth'});">
+            <span class="mob-icon">📋</span>
+            <span>Tất cả</span>
+        </button>
+        <button type="button" class="mob-nav-item" id="mobNavOverdue" onclick="setStatusFilter('overdue')">
+            <span class="mob-icon">⚠️</span>
+            <span>Quá hạn</span>
+        </button>
+        <button type="button" class="mob-nav-item" id="mobNavWarning" onclick="setStatusFilter('warning')">
+            <span class="mob-icon">⏳</span>
+            <span>Sắp hạn</span>
+        </button>
+        <button type="button" class="mob-nav-item ct-action" onclick="openTaskModal()">
+            <span class="mob-icon">➕</span>
+            <span>Tạo CT</span>
+        </button>
+        <button type="button" class="mob-nav-item" id="mobNavAccount" onclick="openProfileModal()">
+            <span class="mob-icon">👤</span>
+            <span id="mobNavAccountText">Tài khoản</span>
+        </button>
+    </nav>
+</div>
+
+<!-- MODAL THÔNG TIN CÁ NHÂN, ĐỔI MẬT KHẨU & BẢO MẬT 2FA (CHUẨN /QUANLYDAUTHAU) -->
+<div id="profileModal" class="modal" onclick="if(event.target===this) closeProfileModal()">
+    <div class="modal-content" style="max-width: 440px;">
+        <div class="modal-drag-handle"></div>
+        <div class="modal-header">
+            <h3 style="display:flex; align-items:center; gap:8px;">🛡️ Tài khoản & Bảo mật Supabase Auth</h3>
+            <span class="close-modal" onclick="closeProfileModal()">&times;</span>
+        </div>
+        <div class="form-group">
+            <label>Email xác thực (Dùng chung Auth với Quản lý đấu thầu)</label>
+            <input type="text" id="profileEmail" disabled style="background:#f1f5f9; color:#64748b; cursor:not-allowed;">
+        </div>
+        <div class="form-group">
+            <label>Vai trò trên Theo dõi nhiệm vụ (<code>sce_tdnv_profiles</code>) & Phòng ban</label>
+            <input type="text" id="profileRoleDeptInfo" disabled style="background:#eff6ff; color:#1d4ed8; font-weight:700; cursor:not-allowed;">
+        </div>
+        <div class="form-group">
+            <label>Họ và Tên hiển thị (Chủ trì nhiệm vụ)</label>
+            <input type="text" id="profileFullname" placeholder="VD: Hoàng, Hoa, Đông...">
+        </div>
+        <div class="form-group">
+            <label>Đổi mật khẩu mới (Supabase Auth Bcrypt)</label>
+            <input type="password" id="profilePassword" placeholder="Bỏ trống nếu giữ nguyên (tối thiểu 6 ký tự)">
+        </div>
+
+        <!-- Khu vực Cài đặt Xác thực 2 lớp (2FA / TOTP) -->
+        <div style="padding: 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                <div>
+                    <div style="font-size: 13px; font-weight: 700; color: #1e293b;">🔐 Xác thực 2 yếu tố (2FA / TOTP)</div>
+                    <div id="mfaStatusText" style="font-size: 11.5px; color: #64748b;">Bảo vệ tài khoản bằng Google Authenticator</div>
+                </div>
+                <button type="button" id="btnEnrollMfa" class="btn btn-info" style="font-size: 12px; padding: 6px 10px; min-height: 32px;" onclick="window.startMfaEnrollment()">Thiết lập 2FA</button>
+            </div>
+            <div id="mfaEnrollContainer" class="hidden" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0; text-align: center;">
+                <p style="font-size: 12px; color: #475569; margin: 0 0 8px 0;">Quét mã QR dưới đây bằng ứng dụng <strong>Google Authenticator</strong> hoặc <strong>Authy</strong>:</p>
+                <div id="mfaQrImageContainer" style="background: #fff; padding: 8px; border-radius: 8px; display: inline-block; border: 1px solid #cbd5e1; margin-bottom: 8px;"></div>
+                <input type="text" id="mfaEnrollVerifyCode" maxlength="6" placeholder="Nhập 6 số trên điện thoại..." style="text-align: center; font-family: monospace; font-weight: 700; letter-spacing: 3px; margin-bottom: 8px;">
+                <button type="button" class="btn btn-success" style="width: 100%;" onclick="window.confirmMfaEnrollment()">Kích hoạt 2FA ngay</button>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; gap: 10px; padding-top: 12px; border-top: 1px solid #eee;">
+            <button type="button" class="btn btn-danger" onclick="handleLogout()">🔒 Đăng xuất</button>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn btn-logout" onclick="closeProfileModal()">Đóng</button>
+                <button type="button" class="btn btn-success" onclick="saveProfile()">💾 Lưu cập nhật</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL QUẢN LÝ TÀI KHOẢN & PHÊ DUYỆT TRÊN BẢNG RIÊNG (sce_tdnv_profiles) -->
+<div id="userModal" class="modal" onclick="if(event.target===this) closeUserModal()">
+    <div class="modal-content" style="max-width: 860px;">
+        <div class="modal-drag-handle"></div>
+        <div class="modal-header">
+            <h3>👥 Quản lý & Phê duyệt Tài khoản (Bảng riêng <code>sce_tdnv_profiles</code>)</h3>
+            <span class="close-modal" onclick="closeUserModal()">&times;</span>
+        </div>
+        <div style="font-size: 12.5px; color: #334155; background: #f8fafc; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span>💡 Xác thực qua <strong>Supabase Auth</strong> chung với <code>/quanlydauthau</code>, nhưng phân quyền và phê duyệt độc lập trên bảng <code>public.sce_tdnv_profiles</code> (4 vai trò nội bộ, không có chế độ khách).</span>
+            <button type="button" class="btn btn-info" style="font-size: 11.5px; padding: 5px 10px; min-height: 32px;" onclick="syncUsersFromDauThauProfiles()">🔄 Đồng bộ cán bộ từ Đấu thầu (<code>sce_v2_profiles</code>)</button>
+        </div>
+        <div style="margin-bottom: 16px; display: flex; gap: 8px; flex-wrap: wrap; background: #f8fafc; padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
+            <input type="email" id="newEmail" placeholder="Email đăng nhập (VD: hoang@sce.gov.vn)" style="flex: 1.3; min-width: 180px;">
+            <input type="text" id="newFullname" placeholder="Họ tên Chủ trì (VD: Hoàng)" style="flex: 1; min-width: 140px;">
+            <select id="newDepartment" style="flex: 1; min-width: 160px;">
+                <option value="Phòng Xúc tiến đầu tư">Phòng Xúc tiến đầu tư</option>
+                <option value="Phòng Hành chính - Tổ chức">Phòng Hành chính - Tổ chức</option>
+                <option value="Phòng Phát triển doanh nghiệp">Phòng Phát triển doanh nghiệp</option>
+                <option value="Phòng Tư vấn doanh nghiệp">Phòng Tư vấn doanh nghiệp</option>
+                <option value="Ban Giám đốc">Ban Giám đốc</option>
+            </select>
+            <select id="newUserRole" style="flex: 1; min-width: 140px;">
+                <option value="chuyenvien">Chuyên viên</option>
+                <option value="lanhdao">Lãnh đạo</option>
+                <option value="nhaplieu">Nhập liệu</option>
+                <option value="admin">Quản trị viên (Admin)</option>
+            </select>
+            <button class="btn btn-add" onclick="addUser()">➕ Cấp quyền Email</button>
+        </div>
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border);">
+                <thead>
+                    <tr style="background: var(--primary); color: white; text-align: left;">
+                        <th style="padding: 10px 12px;">Email Auth</th>
+                        <th style="padding: 10px 12px;">Họ tên Cán bộ (Chủ trì)</th>
+                        <th style="padding: 10px 12px;">Phòng chuyên môn</th>
+                        <th style="padding: 10px 12px;">Vai trò (<code>sce_tdnv_profiles</code>)</th>
+                        <th style="padding: 10px 12px;">Trạng thái</th>
+                        <th style="padding: 10px 12px; text-align: center;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="userListBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL CẤU HÌNH SUPABASE & KHỞI TẠO SQL -->
+<div id="supabaseModal" class="modal" onclick="if(event.target===this) closeSupabaseModal()">
+    <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-drag-handle"></div>
+        <div class="modal-header">
+            <h3>🗄️ Kết nối Chung Database Supabase (/quanlydauthau)</h3>
+            <span class="close-modal" onclick="closeSupabaseModal()">&times;</span>
+        </div>
+        <div class="form-group">
+            <label>Supabase Project URL (Dùng chung với Quản lý Đấu thầu SCE)</label>
+            <input type="url" id="sbUrlInput" placeholder="https://xqmeeticiwclsvckpqrd.supabase.co">
+        </div>
+        <div class="form-group">
+            <label>Supabase Anon / Public Key</label>
+            <input type="text" id="sbKeyInput" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px;">
+            <button class="btn btn-success" onclick="saveSupabaseConfig()">💾 Lưu & Kết nối lại</button>
+            <button class="btn btn-info" onclick="pushLocalDataToSupabase()">☁️ Đồng bộ Dữ liệu & Profile lên Supabase</button>
+            <button class="btn btn-edit" onclick="copySupabaseSql()">📋 Copy SQL Tạo Bảng & Profile Riêng</button>
+        </div>
+        <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-size: 12.5px; color: #334155;">
+            <strong>Kiến trúc dùng chung Supabase Auth nhưng tách biệt Profile:</strong>
+            <ul style="margin: 6px 0 0 18px; padding: 0;">
+                <li><strong>Xác thực (Auth):</strong> Dùng chung hệ thống <code>auth.users</code> (Email/Password, Google OAuth, 2FA TOTP) của <code>/quanlydauthau</code>.</li>
+                <li><strong>Hồ sơ & Phân quyền riêng:</strong> Lưu tại bảng <code>public.sce_tdnv_profiles</code> (4 vai trò nội bộ: <em>chuyenvien, lanhdao, nhaplieu, admin</em> — đã bỏ chế độ khách & mật khẩu plaintext).</li>
+                <li>Bấm <strong>"📋 Copy SQL Tạo Bảng & Profile Riêng"</strong> (hoặc mở file <code>database/supabase_nhiemvu_schema.sql</code>) và chạy trong <strong>Supabase SQL Editor</strong>.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL CẤP 1: CHƯƠNG TRÌNH / KẾ HOẠCH -->
+<div id="taskModal" class="modal" onclick="if(event.target===this) closeTaskModal()">
+    <div class="modal-content">
+        <div class="modal-drag-handle"></div>
+        <div class="modal-header">
+            <h3 id="modalTaskHeader">Tạo / Sửa Chương trình</h3>
+            <span class="close-modal" onclick="closeTaskModal()">&times;</span>
+        </div>
+        <input type="hidden" id="modalTaskId">
+        <div class="form-group">
+            <label>Tên Chương trình / Kế hoạch <span style="color:red">*</span></label>
+            <input type="text" id="newTaskTitle" placeholder="Ví dụ: Triển khai Kế hoạch số 277/KH-UBND...">
+        </div>
+        <div class="form-group">
+            <label>Tài liệu / Link đính kèm</label>
+            <div id="newLinksContainer" style="display: flex; flex-direction: column; gap: 8px;"></div>
+            <button type="button" class="btn btn-info" style="align-self: flex-start; margin-top: 4px; font-size: 12px;" onclick="addLinkRow('newLinksContainer')">➕ Thêm link tài liệu</button>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid #eee;">
+            <button class="btn btn-danger" onclick="closeTaskModal()">Hủy bỏ</button>
+            <button class="btn btn-success" onclick="saveTask()">💾 Lưu Chương trình</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL CẤP 2: NHIỆM VỤ CỤ THỂ -->
+<div id="subtaskModal" class="modal" onclick="if(event.target===this) closeSubtaskModal()">
+    <div class="modal-content">
+        <div class="modal-drag-handle"></div>
+        <div class="modal-header">
+            <h3 id="modalStHeader">Tạo / Sửa Nhiệm vụ cụ thể</h3>
+            <span class="close-modal" onclick="closeSubtaskModal()">&times;</span>
+        </div>
+        <input type="hidden" id="modalStTaskId">
+        <input type="hidden" id="modalStId">
+
+        <div class="form-group">
+            <label>Tên Nhiệm vụ <span style="color:red">*</span></label>
+            <input type="text" id="st-title" placeholder="Ví dụ: Rà soát các dự án...">
+        </div>
+        <div class="form-row-2">
+            <div class="form-group">
+                <label>Chu kỳ lặp lại</label>
+                <select id="st-lth" onchange="onLoaiThoiHanChange(this, 'st-deadline')">
+                    <option value="cuthe">Không lặp lại (Cụ thể)</option>
+                    <option value="hangtuan">Hàng tuần</option>
+                    <option value="hangthang">Hàng tháng</option>
+                    <option value="hangquy">Hàng quý</option>
+                    <option value="hangnam">Hàng năm</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Ngày hạn chót <span style="color:red">*</span></label>
+                <input type="date" id="st-deadline">
+            </div>
+        </div>
+        <div class="form-row-2">
+            <div class="form-group">
+                <label>Chủ trì</label>
+                <select id="st-chutri"></select>
+            </div>
+            <div class="form-group">
+                <label>Trạng thái</label>
+                <select id="st-trangthai">
+                    <option value="Chưa thực hiện">Chưa thực hiện</option>
+                    <option value="Đang thực hiện">Đang thực hiện</option>
+                    <option value="Chậm tiến độ">Chậm tiến độ</option>
+                    <option value="Đã hoàn thành">Đã hoàn thành</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Kết quả / Ghi chú</label>
+            <input type="text" id="st-ketqua" placeholder="Nhập kết quả thực hiện, sản phẩm hoặc ghi chú...">
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid #eee;">
+            <button class="btn btn-danger" onclick="closeSubtaskModal()">Hủy bỏ</button>
+            <button class="btn btn-success" onclick="saveSubtask()">💾 Lưu Nhiệm vụ</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL CẤP 3: CÔNG VIỆC TRIỂN KHAI -->
+<div id="workModal" class="modal" onclick="if(event.target===this) closeWorkModal()">
+    <div class="modal-content" style="max-width: 520px;">
+        <div class="modal-drag-handle"></div>
+        <div class="modal-header">
+            <h3 id="modalWHeader">Tạo / Sửa Công việc triển khai</h3>
+            <span class="close-modal" onclick="closeWorkModal()">&times;</span>
+        </div>
+        <input type="hidden" id="modalWTaskId">
+        <input type="hidden" id="modalWSubtaskId">
+        <input type="hidden" id="modalWId">
+
+        <div class="form-group">
+            <label>Tên Công việc <span style="color:red">*</span></label>
+            <input type="text" id="w-title" placeholder="Nhập nội dung công việc triển khai...">
+        </div>
+        <div class="form-group">
+            <label>Phân công Chủ trì</label>
+            <select id="w-ct"></select>
+        </div>
+        <div class="form-group">
+            <label>Đơn vị / Cá nhân Phối hợp</label>
+            <input type="text" id="w-ph" placeholder="Nhập cá nhân hoặc phòng ban phối hợp...">
+        </div>
+        <div class="form-row-2">
+            <div class="form-group">
+                <label>Thời hạn hoàn thành</label>
+                <input type="date" id="w-dl">
+            </div>
+            <div class="form-group">
+                <label>Trạng thái</label>
+                <select id="w-tt">
+                    <option value="Chưa thực hiện">Chưa thực hiện</option>
+                    <option value="Đang thực hiện">Đang thực hiện</option>
+                    <option value="Đã hoàn thành">Đã hoàn thành</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid #eee;">
+            <button class="btn btn-danger" onclick="closeWorkModal()">Hủy bỏ</button>
+            <button class="btn btn-success" onclick="saveWork()">💾 Lưu Công việc</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // =========================================================================
+    // 1. CẤU HÌNH SUPABASE AUTH (CHUẨN /QUANLYDAUTHAU) & BẢNG PROFILE RIÊNG (sce_tdnv_profiles)
+    // =========================================================================
+    const DEFAULT_SUPABASE_URL = "https://xqmeeticiwclsvckpqrd.supabase.co";
+    const DEFAULT_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhxbWVldGljaXdjbHN2Y2twcXJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwMzQ4NDEsImV4cCI6MjEwNjYxMDg0MX0.izCPDQ8wIMqr8GEm47Oz2PTJB7srj5Fj7DpeKIR_HAk";
+
+    // Bảng riêng biệt cho phần mềm Theo dõi nhiệm vụ trên cùng Project Supabase với /quanlydauthau
+    const SUPABASE_DATA_TABLE = "sce_tdnv_app_data";
+    const SUPABASE_PROFILE_TABLE = "sce_tdnv_profiles";
+    const SUPABASE_BACKUP_TABLE = "sce_tdnv_backups";
+    const SUPABASE_AUDIT_TABLE = "sce_tdnv_audit_logs";
+    const DAUTHAU_PROFILE_TABLE = "sce_v2_profiles";
+    const LOCAL_STORAGE_KEY = "sce_tasks_supabase_v5";
+
+    // Không lưu cứng dữ liệu nội bộ, link Google Drive hoặc danh sách email cán bộ trên mã nguồn GitHub Public.
+    // Toàn bộ dữ liệu được tải từ bảng bảo mật RLS (sce_tdnv_app_data & sce_tdnv_profiles) sau khi xác thực Supabase Auth.
+    let taskIdCounter = 110, subtaskIdCounter = 1020, workIdCounter = 10000;
+    let tasks = [];
+    let users = [];
+    let currentUser = null;
+    let pendingMfaFactorId = null;
+    let enrollingFactorId = null;
+    let inactivityTimer = null;
+    const INACTIVITY_LIMIT_MS = 30 * 60 * 1000; // Tự động đăng xuất sau 30 phút không hoạt động giống /quanlydauthau
+
+    let expandedSubtaskIds = [];
+    let currentStatusFilter = 'all'; // 'all' | 'active' | 'warning' | 'overdue'
+    let supabaseClient = null;
+    let realtimeChannel = null;
+    let backgroundSyncInterval = null;
+    let lastBackupTimestamp = 0;
+    let deferredInstallPrompt = null;
+    let isRefreshingJwtPromise = null;
+    window.lastJwtRefreshTime = Date.now();
+
+    function normalizeTdnvRole(role) {
+        const r = String(role || 'chuyenvien').toLowerCase().trim();
+        if (r === 'admin') return 'admin';
+        if (r === 'lanhdao' || r === 'leader' || r === 'dept_leader' || r === 'team_lead') return 'lanhdao';
+        if (r === 'nhaplieu') return 'nhaplieu';
+        return 'chuyenvien'; // Bỏ chế độ khách 'guest'
+    }
+
+    function getRoleLabel(role) {
+        const r = normalizeTdnvRole(role);
+        if (r === 'admin') return 'Quản trị viên (Admin)';
+        if (r === 'lanhdao') return 'Lãnh đạo';
+        if (r === 'nhaplieu') return 'Nhập liệu';
+        return 'Chuyên viên';
+    }
+
+    function sanitizeUsersList(list) {
+        if (!Array.isArray(list)) return [];
+        return list.map(u => {
+            const name = (u.fullname || u.full_name || u.username || (u.email ? u.email.split('@')[0] : 'Chuyên viên')).trim();
+            const email = (u.email || (u.username && u.username.includes('@') ? u.username : `${name.toLowerCase().replace(/\s+/g, '')}@sce.gov.vn`)).toLowerCase().trim();
+            return {
+                id: u.id || u.auth_user_id || null,
+                email: email,
+                fullname: name,
+                username: name, // Giữ trường tương thích cho dropdown Chủ trì nhiệm vụ
+                role: normalizeTdnvRole(u.role),
+                department: u.department ? String(u.department).trim() : 'Phòng Xúc tiến đầu tư',
+                is_active: u.is_active !== false
+            };
+        });
+    }
+    users = sanitizeUsersList(users);
+
+    function getSbConfig() {
+        try {
+            const raw = localStorage.getItem('sce_nhiemvu_sb_config') || localStorage.getItem('sce_v2_supabase_config') || '{}';
+            const saved = JSON.parse(raw);
+            return {
+                url: (saved.url || DEFAULT_SUPABASE_URL).trim(),
+                key: (saved.key || DEFAULT_SUPABASE_ANON_KEY).trim()
+            };
+        } catch (e) {
+            return { url: DEFAULT_SUPABASE_URL, key: DEFAULT_SUPABASE_ANON_KEY };
+        }
+    }
+
+    // Tự động làm mới JWT và retry khi hết hạn (Chuẩn /quanlydauthau)
+    window.refreshSupabaseSessionNow = async function() {
+        if (!supabaseClient) return null;
+        if (isRefreshingJwtPromise) return isRefreshingJwtPromise;
+        isRefreshingJwtPromise = (async () => {
+            try {
+                const { data, error } = await supabaseClient.auth.refreshSession();
+                if (!error && data && data.session) {
+                    window.lastJwtRefreshTime = Date.now();
+                    return data.session;
+                }
+            } catch (e) {
+                console.warn("Không thể tự động làm mới JWT:", e);
+            } finally {
+                isRefreshingJwtPromise = null;
+            }
+            return null;
+        })();
+        return isRefreshingJwtPromise;
+    };
+
+    window.sceSupabaseFetch = async function(url, options = {}) {
+        const urlStr = String(url || '');
+        const isAuthEndpoint = urlStr.includes('/auth/v1/');
+
+        if (!isAuthEndpoint && window.lastJwtRefreshTime && (Date.now() - window.lastJwtRefreshTime > 40 * 60 * 1000)) {
+            const preRefreshed = await window.refreshSupabaseSessionNow();
+            if (preRefreshed && preRefreshed.access_token && options && options.headers) {
+                if (typeof options.headers.set === 'function') {
+                    options.headers.set('Authorization', 'Bearer ' + preRefreshed.access_token);
+                } else {
+                    options.headers['Authorization'] = 'Bearer ' + preRefreshed.access_token;
+                    delete options.headers['authorization'];
+                }
+            }
+        }
+
+        let res = await fetch(url, options);
+
+        if (!isAuthEndpoint && (res.status === 401 || res.status === 403)) {
+            let isJwtErr = (res.status === 401);
+            if (!isJwtErr) {
+                try {
+                    const errBody = await res.clone().text();
+                    if (/jwt expired|pgrst301|invalid jwt|token is expired/i.test(errBody)) {
+                        isJwtErr = true;
+                    }
+                } catch (e) {}
+            }
+            if (isJwtErr && supabaseClient) {
+                const newSession = await window.refreshSupabaseSessionNow();
+                if (newSession && newSession.access_token) {
+                    const retryOptions = Object.assign({}, options);
+                    if (retryOptions.headers) {
+                        if (typeof retryOptions.headers.set === 'function') {
+                            const newHeaders = new Headers(retryOptions.headers);
+                            newHeaders.set('Authorization', 'Bearer ' + newSession.access_token);
+                            retryOptions.headers = newHeaders;
+                        } else {
+                            retryOptions.headers = Object.assign({}, retryOptions.headers, {
+                                Authorization: 'Bearer ' + newSession.access_token
+                            });
+                            delete retryOptions.headers['authorization'];
+                        }
+                    }
+                    res = await fetch(url, retryOptions);
+                }
+            }
+        }
+        return res;
+    };
+
+    function initSupabaseClient() {
+        const cfg = getSbConfig();
+        if (window.supabase && window.supabase.createClient && cfg.url && cfg.key) {
+            supabaseClient = window.supabase.createClient(cfg.url, cfg.key, {
+                auth: {
+                    persistSession: true,
+                    autoRefreshToken: true,
+                    detectSessionInUrl: true,
+                    storageKey: 'sce_v2_auth_token' // Dùng chung kho phiên đăng nhập Supabase Auth với /quanlydauthau
+                },
+                global: {
+                    fetch: window.sceSupabaseFetch
+                }
+            });
+            setupRealtimeSubscription();
+        }
+    }
+
+    function setupRealtimeSubscription() {
+        if (!supabaseClient) return;
+        try {
+            if (realtimeChannel) {
+                supabaseClient.removeChannel(realtimeChannel);
+            }
+            realtimeChannel = supabaseClient
+                .channel('sce-tdnv-realtime')
+                .on(
+                    'postgres_changes',
+                    { event: '*', schema: 'public', table: SUPABASE_DATA_TABLE, filter: 'id=eq.1' },
+                    (payload) => {
+                        if (!currentUser || document.querySelector('.modal.active')) return;
+                        if (payload.new && payload.new.data) {
+                            const incoming = payload.new.data;
+                            const incomingTasks = incoming.tasks || [];
+                            if (JSON.stringify(incomingTasks) !== JSON.stringify(tasks)) {
+                                tasks = incomingTasks;
+                                migrateOldData();
+                                updateCounters();
+                                updateFilterDropdown();
+                                renderTasks();
+                                updateSyncStatus('synced', 'Realtime Supabase');
+                            }
+                        }
+                    }
+                )
+                .on(
+                    'postgres_changes',
+                    { event: '*', schema: 'public', table: SUPABASE_PROFILE_TABLE },
+                    async () => {
+                        if (!currentUser) return;
+                        try {
+                            await window.syncProfilesFromSupabase({ id: currentUser.id, email: currentUser.email, user_metadata: { fullname: currentUser.fullname } });
+                            updateFilterDropdown();
+                            if (document.getElementById('userModal').classList.contains('active')) {
+                                renderUsers();
+                            }
+                        } catch (e) {}
+                    }
+                )
+                .subscribe();
+        } catch (err) {
+            console.warn("Realtime subscription notice:", err);
+        }
+    }
+
+    // =========================================================================
+    // 2. KHỞI ĐỘNG WEB APP, PWA SERVICE WORKER & KIỂM TRA PHIÊN SUPABASE AUTH
+    // =========================================================================
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        const btn = document.getElementById('btnInstallPwa');
+        if (btn) btn.style.display = 'inline-flex';
+    });
+
+    async function installPWA() {
+        if (deferredInstallPrompt) {
+            deferredInstallPrompt.prompt();
+            await deferredInstallPrompt.userChoice;
+            deferredInstallPrompt = null;
+            const btn = document.getElementById('btnInstallPwa');
+            if (btn) btn.style.display = 'none';
+        } else {
+            alert("💡 Hướng dẫn cài đặt App ra màn hình chính:\n- Trên iPhone/iPad (Safari): Bấm nút Chia sẻ (Share) -> Chọn 'Thêm vào MH chính' (Add to Home Screen).\n- Trên Android (Chrome) / Máy tính: Bấm biểu tượng Cài đặt (Install) trên thanh địa chỉ trình duyệt.");
+        }
+    }
+
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js').catch(() => {});
+        });
+    }
+
+    function resetInactivityTimer() {
+        if (!currentUser) return;
+        if (inactivityTimer) clearTimeout(inactivityTimer);
+        inactivityTimer = setTimeout(() => {
+            if (currentUser) {
+                window.handleLogout(true);
+            }
+        }, INACTIVITY_LIMIT_MS);
+    }
+    ['mousemove', 'keydown', 'click', 'touchstart'].forEach(evt => {
+        window.addEventListener(evt, resetInactivityTimer, { passive: true });
+    });
+
+    function setLoader(visible, text = "Đang đồng bộ phiên bảo mật...") {
+        const loader = document.getElementById('loader');
+        const lText = document.getElementById('loaderText');
+        if (lText && text) lText.innerText = text;
+        if (loader) loader.style.display = visible ? 'flex' : 'none';
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        // Xóa các khóa phiên cũ có chế độ khách hoặc lưu mật khẩu plaintext
+        ['isLoggedIn', 'userRole', 'username'].forEach(k => {
+            sessionStorage.removeItem(k);
+            localStorage.removeItem(k);
+        });
+
+        const savedLayout = localStorage.getItem('sce_nhiemvu_grid_layout') || 'auto';
+        setGridLayout(savedLayout, false);
+        initSupabaseClient();
+
+        if (supabaseClient) {
+            try {
+                let { data: { session } } = await supabaseClient.auth.getSession();
+                if (session && session.user) {
+                    setLoader(true, "Đang đồng bộ phiên bảo mật Supabase Auth...");
+                    try {
+                        const refreshed = await window.refreshSupabaseSessionNow();
+                        if (refreshed && refreshed.user) {
+                            session = refreshed;
+                        } else {
+                            const { data: uCheck, error: uErr } = await supabaseClient.auth.getUser();
+                            if (uErr || !uCheck || !uCheck.user) {
+                                await supabaseClient.auth.signOut();
+                                localStorage.removeItem('sce_v2_auth_token');
+                                throw new Error("Phiên đăng nhập trước đó đã hết hạn. Vui lòng đăng nhập lại để tiếp tục!");
+                            }
+                        }
+                        await window.completeAuthenticatedSession(session.user);
+                    } catch (sessErr) {
+                        showLoginError(sessErr.message);
+                    } finally {
+                        setLoader(false);
+                    }
+                }
+            } catch (err) {
+                setLoader(false);
+            }
+        }
+    });
+
+    // =========================================================================
+    // 3. HỆ THỐNG XÁC THỰC SUPABASE AUTH (CHUẨN /QUANLYDAUTHAU) & BẢNG sce_tdnv_profiles
+    // =========================================================================
+    function showLoginError(msg) {
+        const succ = document.getElementById('loginSuccess');
+        if (succ) succ.classList.add('hidden');
+        const el = document.getElementById('loginError');
+        if (el) {
+            el.innerText = msg;
+            el.classList.remove('hidden');
+        }
+    }
+
+    function showLoginSuccess(msg) {
+        const err = document.getElementById('loginError');
+        if (err) err.classList.add('hidden');
+        const el = document.getElementById('loginSuccess');
+        if (el) {
+            el.innerText = msg;
+            el.classList.remove('hidden');
+        }
+    }
+
+    window.switchAuthMode = function(mode) {
+        const err = document.getElementById('loginError');
+        const succ = document.getElementById('loginSuccess');
+        if (err) err.classList.add('hidden');
+        if (succ) succ.classList.add('hidden');
+
+        const fLogin = document.getElementById('authFormLogin');
+        const fReg = document.getElementById('authFormRegister');
+        if (mode === 'register') {
+            if (fLogin) fLogin.classList.add('hidden');
+            if (fReg) fReg.classList.remove('hidden');
+        } else {
+            if (fReg) fReg.classList.add('hidden');
+            if (fLogin) fLogin.classList.remove('hidden');
+        }
+    };
+
+    // Đồng bộ danh sách Hồ sơ người dùng từ bảng riêng public.sce_tdnv_profiles
+    window.syncProfilesFromSupabase = async function(authUser) {
+        if (!supabaseClient || !authUser) return null;
+        try {
+            const existingMap = {};
+            if (Array.isArray(users)) {
+                users.forEach(u => {
+                    const k = String(u.email || '').toLowerCase().trim();
+                    if (k) existingMap[k] = u;
+                });
+            }
+
+            let { data: profiles, error } = await supabaseClient
+                .from(SUPABASE_PROFILE_TABLE)
+                .select('id, email, fullname, role, department, is_active')
+                .order('created_at', { ascending: true });
+
+            if (!error && Array.isArray(profiles)) {
+                let myProfile = profiles.find(p => p.id === authUser.id || (p.email && authUser.email && p.email.toLowerCase() === authUser.email.toLowerCase()));
+
+                if (!myProfile) {
+                    // Kiểm tra xem cán bộ này đã được duyệt bên sce_v2_profiles (/quanlydauthau) hoặc nằm trong danh sách cấp quyền trước hay chưa
+                    const emailLower = (authUser.email || '').toLowerCase().trim();
+                    const preApproved = users.find(u =>
+                        (u.email && u.email.toLowerCase() === emailLower) ||
+                        (authUser.user_metadata?.fullname && u.fullname.toLowerCase() === String(authUser.user_metadata.fullname).toLowerCase().trim())
+                    );
+
+                    let v2Profile = null;
+                    try {
+                        const { data: v2Data } = await supabaseClient
+                            .from(DAUTHAU_PROFILE_TABLE)
+                            .select('id, email, fullname, role, department, is_active')
+                            .eq('id', authUser.id)
+                            .maybeSingle();
+                        if (v2Data) v2Profile = v2Data;
+                    } catch (e) {}
+
+                    const isFirstUser = profiles.length === 0;
+                    let assignedRole = 'chuyenvien';
+                    if (isFirstUser) assignedRole = 'admin';
+                    else if (preApproved) assignedRole = normalizeTdnvRole(preApproved.role);
+                    else if (v2Profile && v2Profile.role === 'admin') assignedRole = 'admin';
+                    else if (v2Profile && ['leader', 'dept_leader', 'team_lead'].includes(v2Profile.role)) assignedRole = 'lanhdao';
+
+                    const assignedActive = isFirstUser
+                        ? true
+                        : (preApproved ? (preApproved.is_active !== false) : (v2Profile ? (v2Profile.is_active === true) : false));
+
+                    const defaultName = preApproved?.fullname || v2Profile?.fullname || authUser.user_metadata?.fullname || authUser.user_metadata?.full_name || authUser.user_metadata?.name || emailLower.split('@')[0];
+                    const defaultDept = preApproved?.department || v2Profile?.department || authUser.user_metadata?.department || 'Phòng Xúc tiến đầu tư';
+
+                    const { data: inserted, error: insErr } = await supabaseClient
+                        .from(SUPABASE_PROFILE_TABLE)
+                        .upsert({
+                            id: authUser.id,
+                            email: authUser.email,
+                            fullname: defaultName,
+                            role: assignedRole,
+                            department: defaultDept,
+                            is_active: assignedActive
+                        })
+                        .select()
+                        .single();
+
+                    if (!insErr && inserted) {
+                        myProfile = inserted;
+                        profiles.push(inserted);
+                    }
+                }
+
+                if (profiles.length > 0) {
+                    const mergedProfiles = profiles.map(p => {
+                        const k = String(p.email || '').toLowerCase().trim();
+                        const ex = existingMap[k] || {};
+                        const fn = (p.fullname || ex.fullname || (p.email ? p.email.split('@')[0] : 'Chuyên viên')).trim();
+                        return {
+                            id: p.id,
+                            email: p.email,
+                            fullname: fn,
+                            username: fn,
+                            role: normalizeTdnvRole(p.role || ex.role || 'chuyenvien'),
+                            department: (p.department && String(p.department).trim()) ? String(p.department).trim() : (ex.department || 'Phòng Xúc tiến đầu tư'),
+                            is_active: p.is_active !== false
+                        };
+                    });
+
+                    // Giữ lại các cán bộ được Admin cấp quyền trước trong danh sách (để phân công Chủ trì)
+                    Object.values(existingMap).forEach(exUser => {
+                        const exEmail = String(exUser.email || '').toLowerCase().trim();
+                        const exName = String(exUser.fullname || '').toLowerCase().trim();
+                        const alreadyIn = mergedProfiles.some(mp =>
+                            String(mp.email || '').toLowerCase().trim() === exEmail ||
+                            String(mp.fullname || '').toLowerCase().trim() === exName
+                        );
+                        if (!alreadyIn) mergedProfiles.push(exUser);
+                    });
+
+                    users = sanitizeUsersList(mergedProfiles);
+                }
+                return myProfile;
+            }
+        } catch (e) {
+            console.warn("Không thể tải sce_tdnv_profiles (có thể chưa chạy SQL khởi tạo):", e);
+        }
+        return null;
+    };
+
+    // Hoàn tất phiên đăng nhập sau khi xác thực JWT (và MFA nếu có) - Chuẩn /quanlydauthau
+    window.completeAuthenticatedSession = async function(authUser) {
+        await initApp();
+        const profile = await window.syncProfilesFromSupabase(authUser);
+
+        if (profile && profile.is_active === false) {
+            await supabaseClient.auth.signOut();
+            throw new Error("Tài khoản đang chờ Quản trị viên phê duyệt hoặc đã bị khóa trên hệ thống Theo dõi nhiệm vụ!");
+        }
+
+        const email = (authUser.email || 'user@sce.gov.vn').toLowerCase().trim();
+        const existingInDb = (users || []).find(u =>
+            (u.email && u.email.toLowerCase() === email) ||
+            (authUser.user_metadata?.fullname && u.fullname.toLowerCase() === String(authUser.user_metadata.fullname).toLowerCase().trim())
+        );
+
+        let rawRole = profile?.role || existingInDb?.role || authUser.user_metadata?.role || 'chuyenvien';
+        let role = normalizeTdnvRole(rawRole);
+        let fullname = (profile?.fullname || existingInDb?.fullname || authUser.user_metadata?.fullname || authUser.user_metadata?.full_name || authUser.user_metadata?.name || email.split('@')[0]).trim();
+        let department = (profile?.department && String(profile.department).trim())
+            ? String(profile.department).trim()
+            : (existingInDb?.department || authUser.user_metadata?.department || 'Phòng Xúc tiến đầu tư');
+
+        if (!profile && !existingInDb && (!users || users.length <= 1)) {
+            role = 'admin';
+        }
+
+        currentUser = {
+            id: authUser.id,
+            email: email,
+            fullname: fullname,
+            username: fullname,
+            role: role,
+            department: department
+        };
+
+        // Đảm bảo người dùng hiện tại có mặt trong danh sách Chủ trì mà KHÔNG lưu mật khẩu
+        const idx = users.findIndex(u =>
+            (u.email && u.email.toLowerCase() === email) ||
+            (u.fullname && u.fullname.toLowerCase() === fullname.toLowerCase())
+        );
+        if (idx === -1) {
+            users.push({ id: authUser.id, email: email, fullname: fullname, username: fullname, role: role, department: department, is_active: true });
+        } else {
+            users[idx] = {
+                id: authUser.id || users[idx].id,
+                email: email,
+                fullname: fullname,
+                username: fullname,
+                role: role,
+                department: department || users[idx].department || 'Phòng Xúc tiến đầu tư',
+                is_active: users[idx].is_active !== false
+            };
+        }
+
+        resetInactivityTimer();
+        openAppScreen();
+    };
+
+    // Đăng nhập bằng Email & Mật khẩu qua Supabase Auth (Chuẩn /quanlydauthau)
+    window.handleLogin = async function() {
+        try {
+            const errBox = document.getElementById('loginError');
+            if (errBox) errBox.classList.add('hidden');
+            const uEl = document.getElementById('loginUser');
+            const pEl = document.getElementById('loginPass');
+            if (!uEl || !pEl) return;
+
+            const email = uEl.value.trim();
+            const password = pEl.value.trim();
+            if (!email || !password) {
+                showLoginError("Vui lòng nhập đầy đủ Email và Mật khẩu.");
+                return;
+            }
+            if (!email.includes('@')) {
+                showLoginError("Vui lòng nhập đúng định dạng Email đăng nhập (không dùng tên viết tắt).");
+                return;
+            }
+
+            setLoader(true, "Đang xác thực Supabase Auth...");
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
+                email: email,
+                password: password
+            });
+
+            if (error) {
+                setLoader(false);
+                if (error.message.includes('Invalid login credentials')) {
+                    showLoginError("Email hoặc mật khẩu không chính xác.");
+                } else if (error.message.includes('Email not confirmed')) {
+                    showLoginError("Email chưa được xác nhận.");
+                } else {
+                    showLoginError("Lỗi đăng nhập: " + error.message);
+                }
+                return;
+            }
+
+            // Kiểm tra tài khoản có bật xác thực 2 lớp (2FA / MFA TOTP) hay không
+            try {
+                const { data: aalData } = await supabaseClient.auth.mfa.getAuthenticatorAssuranceLevel();
+                if (aalData && aalData.nextLevel === 'aal2' && aalData.currentLevel !== 'aal2') {
+                    const { data: factors } = await supabaseClient.auth.mfa.listFactors();
+                    const totpFactor = factors?.totp?.find(f => f.status === 'verified');
+                    if (totpFactor) {
+                        pendingMfaFactorId = totpFactor.id;
+                        setLoader(false);
+                        document.getElementById('mfaVerifyBox').classList.remove('hidden');
+                        document.getElementById('loginMfaCode').focus();
+                        return;
+                    }
+                }
+            } catch (mfaErr) {
+                console.warn("Bỏ qua kiểm tra MFA:", mfaErr);
+            }
+
+            await window.completeAuthenticatedSession(data.user);
+            setLoader(false);
+        } catch (error) {
+            setLoader(false);
+            showLoginError(error.message);
+        }
+    };
+
+    // Đăng nhập qua Google (OAuth) - Chuẩn /quanlydauthau
+    window.handleGoogleLogin = async function() {
+        try {
+            const errBox = document.getElementById('loginError');
+            if (errBox) errBox.classList.add('hidden');
+
+            if (window.location.protocol === 'file:') {
+                alert("Google OAuth yêu cầu mở qua Web Server (GitHub Pages hoặc localhost) để chuyển hướng quay lại sau khi đăng nhập.\nKhi đưa lên GitHub Pages, tính năng này sẽ hoạt động tự động!");
+                return;
+            }
+
+            setLoader(true, "Đang kết nối Google OAuth...");
+            const redirectUrl = window.location.origin + window.location.pathname;
+            const { error } = await supabaseClient.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: redirectUrl }
+            });
+            if (error) {
+                setLoader(false);
+                showLoginError("Lỗi kết nối Google: " + error.message);
+            }
+        } catch (err) {
+            setLoader(false);
+            showLoginError(err.message);
+        }
+    };
+
+    // Xác nhận mã 2FA (6 số TOTP)
+    window.verifyMfaAndProceed = async function() {
+        const code = document.getElementById('loginMfaCode').value.trim();
+        if (!code || code.length !== 6) return showLoginError("Vui lòng nhập đủ 6 chữ số từ ứng dụng Google Authenticator.");
+        setLoader(true, "Đang xác thực mã 2FA...");
+        try {
+            const challenge = await supabaseClient.auth.mfa.challenge({ factorId: pendingMfaFactorId });
+            if (challenge.error) throw challenge.error;
+            const verify = await supabaseClient.auth.mfa.verify({
+                factorId: pendingMfaFactorId,
+                challengeId: challenge.data.id,
+                code: code
+            });
+            if (verify.error) throw verify.error;
+            document.getElementById('mfaVerifyBox').classList.add('hidden');
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            await window.completeAuthenticatedSession(user);
+        } catch (err) {
+            showLoginError("Mã xác thực 2FA không đúng hoặc đã hết hạn: " + err.message);
+        } finally {
+            setLoader(false);
+        }
+    };
+
+    // Đăng ký tài khoản mới qua Supabase Auth (Chuẩn /quanlydauthau)
+    window.handleRegisterAuth = async function() {
+        const fullname = document.getElementById('regFullname').value.trim();
+        const deptEl = document.getElementById('regDepartment');
+        const department = deptEl ? deptEl.value.trim() : 'Phòng Xúc tiến đầu tư';
+        const email = document.getElementById('regEmail').value.trim();
+        const password = document.getElementById('regPassword').value.trim();
+
+        if (!fullname || !email || !password) {
+            return showLoginError("Vui lòng điền đầy đủ Họ tên, Email và Mật khẩu.");
+        }
+        if (!email.includes('@')) {
+            return showLoginError("Email không hợp lệ.");
+        }
+        if (password.length < 6) {
+            return showLoginError("Mật khẩu phải có tối thiểu 6 ký tự.");
+        }
+
+        setLoader(true, "Đang khởi tạo tài khoản Supabase Auth...");
+        try {
+            const { data, error } = await supabaseClient.auth.signUp({
+                email: email,
+                password: password,
+                options: {
+                    data: { fullname: fullname, department: department }
+                }
+            });
+            setLoader(false);
+            if (error) {
+                return showLoginError("Lỗi đăng ký: " + error.message);
+            }
+            if (data.session && data.user) {
+                try {
+                    await window.completeAuthenticatedSession(data.user);
+                } catch (pendingErr) {
+                    window.switchAuthMode('login');
+                    document.getElementById('loginUser').value = email;
+                    showLoginSuccess("Đăng ký thành công! Để bảo mật dữ liệu nội bộ, tài khoản mới đang ở trạng thái CHỜ DUYỆT trên bảng sce_tdnv_profiles. Vui lòng báo Quản trị viên (Admin) bấm nút 'Phê duyệt' trong mục Quản lý TK.");
+                }
+            } else {
+                window.switchAuthMode('login');
+                document.getElementById('loginUser').value = email;
+                showLoginSuccess("Đăng ký tài khoản thành công! Vui lòng báo Quản trị viên (Admin) phê duyệt tài khoản trước khi đăng nhập.");
+            }
+        } catch (err) {
+            setLoader(false);
+            showLoginError("Lỗi hệ thống khi đăng ký: " + err.message);
+        }
+    };
+
+    // Quên mật khẩu qua Supabase Auth
+    window.handleForgotPassword = async function() {
+        const email = document.getElementById('loginUser').value.trim();
+        if (!email || !email.includes('@')) {
+            alert("Vui lòng nhập địa chỉ Email của bạn vào ô Email đăng nhập trước, sau đó bấm lại 'Quên mật khẩu?'.");
+            return;
+        }
+        try {
+            const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+                redirectTo: window.location.origin + window.location.pathname
+            });
+            if (error) throw error;
+            showLoginSuccess(`Hệ thống Supabase Auth đã gửi đường dẫn đặt lại mật khẩu tới hộp thư ${email}.`);
+        } catch (err) {
+            showLoginError("Không thể gửi email khôi phục: " + err.message);
+        }
+    };
+
+    function openAppScreen() {
+        const err = document.getElementById('loginError');
+        if (err) err.classList.add('hidden');
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('appScreen').classList.remove('hidden');
+
+        applyRole();
+        updateFilterDropdown();
+        renderTasks();
+    }
+
+    function applyRole() {
+        if (!currentUser) return;
+        const role = normalizeTdnvRole(currentUser.role);
+        document.body.setAttribute('data-role', role);
+        document.body.classList.remove('read-only-mode');
+
+        const userInfo = document.getElementById('userInfo');
+        const btnManageUsers = document.getElementById('btnManageUsers');
+        const btnDbConfig = document.getElementById('btnDbConfig');
+        const btnAddTask = document.getElementById('btnAddTask');
+        const mobNavAccountText = document.getElementById('mobNavAccountText');
+
+        const roleName = getRoleLabel(role);
+        if (userInfo) {
+            userInfo.innerHTML = `👤 <strong>${currentUser.fullname}</strong> <span style="font-weight:normal; font-size:12px;">(${roleName})</span>`;
+            userInfo.style.color = 'var(--primary)';
+            userInfo.style.background = 'var(--primary-light)';
+        }
+        if (mobNavAccountText) mobNavAccountText.innerText = currentUser.fullname || 'Tài khoản';
+
+        if (btnManageUsers) btnManageUsers.style.display = (role === 'admin') ? 'inline-flex' : 'none';
+        if (btnDbConfig) btnDbConfig.style.display = (role === 'admin') ? 'inline-flex' : 'none';
+        if (btnAddTask) btnAddTask.style.display = (role === 'admin' || role === 'nhaplieu') ? 'inline-flex' : 'none';
+    }
+
+    window.handleLogout = async function(isAutoTimeout = false) {
+        currentUser = null;
+        tasks = [];
+        users = [];
+        if (backgroundSyncInterval) clearInterval(backgroundSyncInterval);
+        if (inactivityTimer) clearTimeout(inactivityTimer);
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
+        localStorage.removeItem('sce_tasks_data_v4');
+        const listEl = document.getElementById('taskList');
+        if (listEl) listEl.innerHTML = '';
+        document.querySelectorAll('.modal.active').forEach(m => m.classList.remove('active'));
+        try {
+            if (supabaseClient) await supabaseClient.auth.signOut();
+        } catch (e) {}
+        document.getElementById('appScreen').classList.add('hidden');
+        document.getElementById('loginScreen').classList.remove('hidden');
+        const passInput = document.getElementById('loginPass');
+        if (passInput) passInput.value = '';
+        if (isAutoTimeout) {
+            showLoginError("Phiên làm việc đã tự động đăng xuất sau 30 phút không hoạt động để bảo mật dữ liệu.");
+        }
+    };
+
+    // =========================================================================
+    // 3B. MODAL HỒ SƠ CÁ NHÂN, ĐỔI MẬT KHẨU BCRYPT & 2FA TOTP (CHUẨN /QUANLYDAUTHAU)
+    // =========================================================================
+    window.openProfileModal = async function() {
+        if (!currentUser) return;
+        document.getElementById('profileEmail').value = currentUser.email || '';
+        document.getElementById('profileRoleDeptInfo').value = `${getRoleLabel(currentUser.role)} — ${currentUser.department || 'Phòng Xúc tiến đầu tư'}`;
+        document.getElementById('profileFullname').value = currentUser.fullname || '';
+        document.getElementById('profilePassword').value = '';
+        document.getElementById('mfaEnrollContainer').classList.add('hidden');
+
+        try {
+            if (supabaseClient) {
+                const { data: factors } = await supabaseClient.auth.mfa.listFactors();
+                const verified = factors?.totp?.find(f => f.status === 'verified');
+                const statusEl = document.getElementById('mfaStatusText');
+                const btnEl = document.getElementById('btnEnrollMfa');
+                if (verified) {
+                    statusEl.innerHTML = '<span style="color:#059669; font-weight:700;">✅ Đã bật bảo vệ 2 lớp (TOTP)</span>';
+                    btnEl.innerText = 'Hủy 2FA';
+                    btnEl.onclick = () => window.unenrollMfa(verified.id);
+                } else {
+                    statusEl.innerText = 'Bảo vệ tài khoản bằng Google Authenticator';
+                    btnEl.innerText = 'Thiết lập 2FA';
+                    btnEl.onclick = () => window.startMfaEnrollment();
+                }
+            }
+        } catch (e) {}
+
+        document.getElementById('profileModal').classList.add('active');
+    };
+
+    window.closeProfileModal = function() {
+        document.getElementById('profileModal').classList.remove('active');
+    };
+
+    window.startMfaEnrollment = async function() {
+        try {
+            const { data, error } = await supabaseClient.auth.mfa.enroll({
+                factorType: 'totp',
+                friendlyName: 'SCE Nhiệm vụ (' + (currentUser.email || currentUser.fullname) + ')'
+            });
+            if (error) throw error;
+            enrollingFactorId = data.id;
+            document.getElementById('mfaQrImageContainer').innerHTML = `<img src="${data.totp.qr_code}" alt="QR 2FA" style="width:160px; height:160px; display:block;">`;
+            document.getElementById('mfaEnrollContainer').classList.remove('hidden');
+        } catch (err) {
+            alert("Lỗi thiết lập 2FA: " + err.message);
+        }
+    };
+
+    window.confirmMfaEnrollment = async function() {
+        const code = document.getElementById('mfaEnrollVerifyCode').value.trim();
+        if (!code || code.length !== 6) {
+            alert("Vui lòng nhập đủ 6 chữ số trên ứng dụng Authenticator!");
+            return;
+        }
+        try {
+            const challenge = await supabaseClient.auth.mfa.challenge({ factorId: enrollingFactorId });
+            if (challenge.error) throw challenge.error;
+            const verify = await supabaseClient.auth.mfa.verify({
+                factorId: enrollingFactorId,
+                challengeId: challenge.data.id,
+                code: code
+            });
+            if (verify.error) throw verify.error;
+            document.getElementById('mfaEnrollContainer').classList.add('hidden');
+            alert("✅ Đã kích hoạt Xác thực 2 lớp (2FA) cho tài khoản của bạn!");
+            window.openProfileModal();
+        } catch (err) {
+            alert("Mã xác thực không hợp lệ: " + err.message);
+        }
+    };
+
+    window.unenrollMfa = async function(factorId) {
+        if (!confirm("Bạn có chắc muốn tắt xác thực 2 lớp (2FA) cho tài khoản này?")) return;
+        try {
+            const { error } = await supabaseClient.auth.mfa.unenroll({ factorId });
+            if (error) throw error;
+            alert("Đã tắt xác thực 2 lớp (2FA).");
+            window.openProfileModal();
+        } catch (err) {
+            alert("Lỗi: " + err.message);
+        }
+    };
+
+    window.saveProfile = async function() {
+        if (!currentUser) return;
+        const newName = document.getElementById('profileFullname').value.trim();
+        const newPass = document.getElementById('profilePassword').value.trim();
+        if (!newName) { alert("Họ và tên hiển thị không được để trống!"); return; }
+        if (newPass && newPass.length < 6) { alert("Mật khẩu mới phải có ít nhất 6 ký tự!"); return; }
+
+        setLoader(true, "Đang cập nhật hồ sơ & bảo mật...");
+        try {
+            const oldName = currentUser.fullname;
+            const updatePayload = { data: { fullname: newName } };
+            if (newPass) updatePayload.password = newPass;
+
+            if (supabaseClient) {
+                const { error } = await supabaseClient.auth.updateUser(updatePayload);
+                if (error) throw error;
+                await supabaseClient
+                    .from(SUPABASE_PROFILE_TABLE)
+                    .update({ fullname: newName, updated_at: new Date().toISOString() })
+                    .eq('id', currentUser.id);
+            }
+
+            currentUser.fullname = newName;
+            currentUser.username = newName;
+            const idx = users.findIndex(u => (u.email || '').toLowerCase() === (currentUser.email || '').toLowerCase());
+            if (idx !== -1) {
+                users[idx].fullname = newName;
+                users[idx].username = newName;
+            }
+            // Đồng bộ tên Chủ trì trên các nhiệm vụ/công việc nếu đổi tên
+            if (oldName && oldName !== newName) {
+                tasks.forEach(t => {
+                    (t.subtasks || []).forEach(st => {
+                        if (st.chutri === oldName) st.chutri = newName;
+                        (st.works || []).forEach(w => {
+                            if (w.chutri === oldName) w.chutri = newName;
+                        });
+                    });
+                });
+            }
+
+            applyRole();
+            updateFilterDropdown();
+            renderTasks();
+            await saveData();
+            closeProfileModal();
+            alert("✅ Đã cập nhật hồ sơ & mật khẩu bảo mật trên Supabase Auth và bảng sce_tdnv_profiles!");
+        } catch (err) {
+            alert("Lỗi cập nhật: " + err.message);
+        } finally {
+            setLoader(false);
+        }
+    };
+
+    // =========================================================================
+    // 3C. QUẢN LÝ & PHÊ DUYỆT TÀI KHOẢN DÀNH CHO ADMIN TRÊN sce_tdnv_profiles
+    // =========================================================================
+    async function openUserModal() {
+        if (!currentUser || currentUser.role !== 'admin') return;
+        document.getElementById('userModal').classList.add('active');
+        if (supabaseClient) {
+            await window.syncProfilesFromSupabase({ id: currentUser.id, email: currentUser.email, user_metadata: { fullname: currentUser.fullname } });
+        }
+        renderUsers();
+    }
+    function closeUserModal() { document.getElementById('userModal').classList.remove('active'); }
+
+    function renderUsers() {
+        const tbody = document.getElementById('userListBody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        users.forEach((u, index) => {
+            const isSelf = currentUser && (String(u.email || '').toLowerCase() === String(currentUser.email || '').toLowerCase());
+            const isActive = u.is_active !== false;
+            const statusHtml = isActive
+                ? `<span style="display:inline-block; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:700; background:#dcfce7; color:#166534;">✔️ Đã kích hoạt</span>`
+                : `<span style="display:inline-block; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:700; background:#fef3c7; color:#92400e;">⏳ Chờ duyệt / Khóa</span>`;
+
+            const toggleBtn = !isSelf
+                ? (isActive
+                    ? `<button class="btn btn-edit" style="padding:4px 8px; font-size:11px; min-height:28px;" onclick="toggleUserActiveStatus(${index})">🔒 Khóa</button>`
+                    : `<button class="btn btn-success" style="padding:4px 8px; font-size:11px; min-height:28px;" onclick="toggleUserActiveStatus(${index})">✔️ Phê duyệt</button>`)
+                : '';
+
+            tbody.innerHTML += `
+                <tr style="border-bottom: 1px solid #eee; background: #fff;">
+                    <td style="padding: 10px 12px; font-family: monospace; font-size: 12px;">
+                        ${u.email || '---'}
+                        ${u.id ? '<span title="Đã liên kết Supabase Auth UUID" style="color:#059669; font-weight:bold;">🛡️</span>' : '<span title="Cấp quyền trước (Chờ đăng ký Auth)" style="color:#64748b; font-size:11px;">(Chờ Auth)</span>'}
+                    </td>
+                    <td style="padding: 10px 12px;"><strong>${u.fullname}</strong></td>
+                    <td style="padding: 10px 12px;">
+                        <select onchange="updateUserDeptInline(${index}, this.value)" style="padding: 4px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12px; background: #f8fafc;">
+                            <option value="Phòng Xúc tiến đầu tư" ${u.department === 'Phòng Xúc tiến đầu tư' ? 'selected' : ''}>Phòng Xúc tiến đầu tư</option>
+                            <option value="Phòng Hành chính - Tổ chức" ${u.department === 'Phòng Hành chính - Tổ chức' ? 'selected' : ''}>Phòng Hành chính - Tổ chức</option>
+                            <option value="Phòng Phát triển doanh nghiệp" ${u.department === 'Phòng Phát triển doanh nghiệp' ? 'selected' : ''}>Phòng Phát triển doanh nghiệp</option>
+                            <option value="Phòng Tư vấn doanh nghiệp" ${u.department === 'Phòng Tư vấn doanh nghiệp' ? 'selected' : ''}>Phòng Tư vấn doanh nghiệp</option>
+                            <option value="Ban Giám đốc" ${u.department === 'Ban Giám đốc' ? 'selected' : ''}>Ban Giám đốc</option>
+                        </select>
+                    </td>
+                    <td style="padding: 10px 12px;">
+                        <select onchange="updateUserRoleInline(${index}, this.value)" style="padding: 4px 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12px; font-weight: 600; background: #f8fafc;">
+                            <option value="chuyenvien" ${u.role === 'chuyenvien' ? 'selected' : ''}>Chuyên viên</option>
+                            <option value="lanhdao" ${u.role === 'lanhdao' ? 'selected' : ''}>Lãnh đạo</option>
+                            <option value="nhaplieu" ${u.role === 'nhaplieu' ? 'selected' : ''}>Nhập liệu</option>
+                            <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin (Quản trị)</option>
+                        </select>
+                    </td>
+                    <td style="padding: 10px 12px;">${statusHtml}</td>
+                    <td style="padding: 10px 12px; text-align: center; white-space: nowrap;">
+                        <div style="display:inline-flex; gap:5px; align-items:center;">
+                            ${toggleBtn}
+                            ${!isSelf ? `<button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px; min-height: 28px;" onclick="deleteUser(${index})">🗑️ Xóa</button>` : '<span style="font-size:11px; color:#888;">Đang dùng</span>'}
+                        </div>
+                    </td>
+                </tr>`;
+        });
+    }
+
+    async function toggleUserActiveStatus(index) {
+        if (!currentUser || currentUser.role !== 'admin') return;
+        const target = users[index];
+        if (!target) return;
+        const nextState = target.is_active === false ? true : false;
+        target.is_active = nextState;
+
+        if (supabaseClient && target.id) {
+            try {
+                await supabaseClient
+                    .from(SUPABASE_PROFILE_TABLE)
+                    .update({ is_active: nextState, updated_at: new Date().toISOString() })
+                    .eq('id', target.id);
+            } catch (e) {}
+        }
+        await saveData();
+        renderUsers();
+    }
+
+    async function updateUserRoleInline(index, newRole) {
+        if (!currentUser || currentUser.role !== 'admin' || !users[index]) return;
+        const target = users[index];
+        target.role = normalizeTdnvRole(newRole);
+        if (supabaseClient && target.id) {
+            try {
+                await supabaseClient
+                    .from(SUPABASE_PROFILE_TABLE)
+                    .update({ role: target.role, updated_at: new Date().toISOString() })
+                    .eq('id', target.id);
+            } catch (e) {}
+        }
+        if (currentUser && target.email === currentUser.email) {
+            currentUser.role = target.role;
+            applyRole();
+        }
+        await saveData();
+        renderUsers();
+        renderTasks();
+    }
+
+    async function updateUserDeptInline(index, newDept) {
+        if (!currentUser || currentUser.role !== 'admin' || !users[index]) return;
+        const target = users[index];
+        target.department = newDept;
+        if (supabaseClient && target.id) {
+            try {
+                await supabaseClient
+                    .from(SUPABASE_PROFILE_TABLE)
+                    .update({ department: newDept, updated_at: new Date().toISOString() })
+                    .eq('id', target.id);
+            } catch (e) {}
+        }
+        if (currentUser && target.email === currentUser.email) {
+            currentUser.department = newDept;
+        }
+        await saveData();
+        renderUsers();
+    }
+
+    async function addUser() {
+        if (!currentUser || currentUser.role !== 'admin') return;
+        const email = document.getElementById('newEmail').value.trim().toLowerCase();
+        const fullname = document.getElementById('newFullname').value.trim();
+        const dept = document.getElementById('newDepartment').value.trim();
+        const rl = normalizeTdnvRole(document.getElementById('newUserRole').value);
+
+        if (!email || !fullname) {
+            alert("Vui lòng nhập đầy đủ Email đăng nhập và Họ tên cán bộ!");
+            return;
+        }
+        if (!email.includes('@')) {
+            alert("Tài khoản đăng nhập phải là địa chỉ Email hợp lệ (VD: hoang@sce.gov.vn)!");
+            return;
+        }
+        if (users.find(u => (u.email && u.email.toLowerCase() === email) || (u.fullname && u.fullname.toLowerCase() === fullname.toLowerCase()))) {
+            alert("Email hoặc Họ tên cán bộ này đã có trong danh sách!");
+            return;
+        }
+
+        const newProfile = {
+            id: null,
+            email: email,
+            fullname: fullname,
+            username: fullname,
+            role: rl,
+            department: dept || 'Phòng Xúc tiến đầu tư',
+            is_active: true
+        };
+        users.push(newProfile);
+        document.getElementById('newEmail').value = '';
+        document.getElementById('newFullname').value = '';
+        await saveData();
+        renderUsers();
+        updateFilterDropdown();
+        alert(`✅ Đã cấp quyền trước cho ${fullname} (${email}) với vai trò ${getRoleLabel(rl)}!\nKhi cán bộ đăng nhập bằng Google hoặc Đăng ký Auth với đúng Email này, hệ thống sẽ tự động gán quyền trên bảng sce_tdnv_profiles.`);
+    }
+
+    async function deleteUser(index) {
+        if (!currentUser || currentUser.role !== 'admin') return;
+        const target = users[index];
+        if (!target) return;
+        if (confirm(`Bạn có chắc muốn xóa tài khoản "${target.fullname} (${target.email})" khỏi bảng Profile Theo dõi nhiệm vụ (sce_tdnv_profiles)?\n(Lưu ý: Không ảnh hưởng đến tài khoản bên Quản lý đấu thầu)`)) {
+            users.splice(index, 1);
+            if (supabaseClient && target.id) {
+                try {
+                    await supabaseClient.from(SUPABASE_PROFILE_TABLE).delete().eq('id', target.id);
+                } catch (e) {}
+            }
+            await saveData();
+            renderUsers();
+            updateFilterDropdown();
+        }
+    }
+
+    async function syncUsersFromDauThauProfiles() {
+        if (!supabaseClient) return;
+        try {
+            const { data: dtProfiles, error } = await supabaseClient
+                .from(DAUTHAU_PROFILE_TABLE)
+                .select('id, email, fullname, role, department, is_active');
+            if (error) throw error;
+            if (!Array.isArray(dtProfiles) || dtProfiles.length === 0) {
+                alert("ℹ️ Bảng `sce_v2_profiles` hiện chưa có bản ghi nào.");
+                return;
+            }
+            let addedCount = 0;
+            for (const p of dtProfiles) {
+                const candidateName = (p.fullname || (p.email ? p.email.split('@')[0] : '')).trim();
+                const emailLower = (p.email || '').toLowerCase().trim();
+                if (!candidateName || !emailLower) continue;
+
+                const mappedRole = p.role === 'admin' ? 'admin' : (['leader', 'dept_leader', 'team_lead'].includes(p.role) ? 'lanhdao' : 'chuyenvien');
+                const existsIdx = users.findIndex(u =>
+                    (u.email && u.email.toLowerCase() === emailLower) ||
+                    (u.fullname && u.fullname.toLowerCase() === candidateName.toLowerCase())
+                );
+                if (existsIdx === -1) {
+                    const newProf = {
+                        id: p.id,
+                        email: emailLower,
+                        fullname: candidateName,
+                        username: candidateName,
+                        role: mappedRole,
+                        department: p.department || 'Phòng Xúc tiến đầu tư',
+                        is_active: p.is_active !== false
+                    };
+                    users.push(newProf);
+                    if (p.id) {
+                        await supabaseClient.from(SUPABASE_PROFILE_TABLE).upsert({
+                            id: p.id,
+                            email: emailLower,
+                            fullname: candidateName,
+                            role: mappedRole,
+                            department: p.department || 'Phòng Xúc tiến đầu tư',
+                            is_active: p.is_active !== false,
+                            updated_at: new Date().toISOString()
+                        }).catch(() => {});
+                    }
+                    addedCount++;
+                } else if (p.id && !users[existsIdx].id) {
+                    users[existsIdx].id = p.id;
+                    users[existsIdx].email = emailLower;
+                    await supabaseClient.from(SUPABASE_PROFILE_TABLE).upsert({
+                        id: p.id,
+                        email: emailLower,
+                        fullname: users[existsIdx].fullname,
+                        role: users[existsIdx].role,
+                        department: users[existsIdx].department || p.department || 'Phòng Xúc tiến đầu tư',
+                        is_active: users[existsIdx].is_active !== false,
+                        updated_at: new Date().toISOString()
+                    }).catch(() => {});
+                }
+            }
+            await saveData();
+            renderUsers();
+            updateFilterDropdown();
+            alert(`✅ Đã đồng bộ từ bảng sce_v2_profiles (Quản lý đấu thầu) sang sce_tdnv_profiles (Theo dõi nhiệm vụ)!\n- Bổ sung mới: ${addedCount} cán bộ.\n- Giữ nguyên 100% phân quyền riêng của các tài khoản đã có.`);
+        } catch (err) {
+            alert("⚠️ Không thể đọc bảng `sce_v2_profiles`: " + err.message);
+        }
+    }
+
+    function generateUserDropdown(selectedUser) {
+        let options = '<option value="">-- Chọn Chủ trì --</option>';
+        users.forEach(u => {
+            const name = u.fullname || u.username;
+            const sel = (name === selectedUser) ? 'selected' : '';
+            options += `<option value="${name}" ${sel}>${name}</option>`;
+        });
+        return options;
+    }
+
+    function updateFilterDropdown() {
+        const filterEl = document.getElementById('filterUser');
+        if (!filterEl) return;
+        const currentVal = filterEl.value;
+        let html = '<option value="">👤 Lọc theo Chủ trì (Tất cả)</option>';
+        users.forEach(u => {
+            const name = u.fullname || u.username;
+            html += `<option value="${name}" ${currentVal === name ? 'selected' : ''}>👤 ${name}</option>`;
+        });
+        filterEl.innerHTML = html;
+    }
+
+    // =========================================================================
+    // 4. ĐỒNG BỘ DỮ LIỆU SUPABASE CLOUD (sce_tdnv_app_data & sce_tdnv_backups)
+    // =========================================================================
+    function updateSyncStatus(state, customLabel = '') {
+        const ind = document.getElementById('syncStatusIndicator');
+        const icon = document.getElementById('syncIcon');
+        const text = document.getElementById('syncText');
+        if (!ind) return;
+        ind.className = 'sync-indicator ' + state;
+        if (state === 'synced') {
+            icon.innerHTML = '☁️✔️';
+            text.innerHTML = customLabel || 'Đã đồng bộ Supabase';
+        } else if (state === 'syncing') {
+            icon.innerHTML = '☁️🔄';
+            text.innerHTML = customLabel || 'Đang đồng bộ...';
+        } else if (state === 'error') {
+            icon.innerHTML = '☁️⚠️';
+            text.innerHTML = customLabel || 'Lưu nội bộ (Chờ chạy SQL)';
+        }
+    }
+
+    async function loadFromSupabase() {
+        if (!supabaseClient) throw new Error("Chưa khởi tạo Supabase Client");
+        const { data: rows, error } = await supabaseClient
+            .from(SUPABASE_DATA_TABLE)
+            .select('data, updated_at')
+            .eq('id', 1);
+        if (error) throw error;
+        if (Array.isArray(rows) && rows.length > 0 && rows[0].data) {
+            return rows[0].data;
+        }
+        return null;
+    }
+
+    async function upsertToSupabase(payload) {
+        if (!supabaseClient || !currentUser) throw new Error("Chưa đăng nhập Supabase Auth");
+        const cleanPayload = {
+            tasks: payload.tasks || [],
+            users: sanitizeUsersList(payload.users || users)
+        };
+        const { error } = await supabaseClient
+            .from(SUPABASE_DATA_TABLE)
+            .upsert({
+                id: 1,
+                data: cleanPayload,
+                updated_at: new Date().toISOString(),
+                updated_by: currentUser.id || null,
+                updated_by_email: currentUser.email || null
+            });
+        if (error) throw error;
+
+        if (Date.now() - lastBackupTimestamp > 60000) {
+            lastBackupTimestamp = Date.now();
+            supabaseClient
+                .from(SUPABASE_BACKUP_TABLE)
+                .insert({
+                    data: cleanPayload,
+                    created_by: currentUser.id || null,
+                    created_by_email: currentUser.email || null
+                })
+                .then(() => {})
+                .catch(() => {});
+        }
+    }
+
+    async function initApp() {
+        updateSyncStatus('syncing');
+        try {
+            const loadedData = await loadFromSupabase();
+            if (loadedData) {
+                tasks = loadedData.tasks || [];
+                if (loadedData.users && loadedData.users.length > 0) {
+                    users = sanitizeUsersList(loadedData.users);
+                }
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({ tasks, users }));
+                updateSyncStatus('synced', 'Đã đồng bộ Supabase (SCE)');
+            } else {
+                await upsertToSupabase({ tasks, users });
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({ tasks, users }));
+                updateSyncStatus('synced', 'Đã khởi tạo dữ liệu Supabase');
+            }
+        } catch (sbError) {
+            console.warn("Thông báo kết nối bảng sce_tdnv_app_data:", sbError.message);
+            const localSaved = localStorage.getItem(LOCAL_STORAGE_KEY) || localStorage.getItem('sce_tasks_data_v4');
+            if (localSaved) {
+                try {
+                    const parsed = JSON.parse(localSaved);
+                    if (parsed.tasks && parsed.tasks.length > 0) tasks = parsed.tasks;
+                    if (parsed.users && parsed.users.length > 0) users = sanitizeUsersList(parsed.users);
+                } catch (e) {}
+            }
+            updateSyncStatus('error', 'Lưu nội bộ (Chờ chạy SQL sce_tdnv_*)');
+        }
+
+        migrateOldData();
+        updateCounters();
+        updateFilterDropdown();
+        renderTasks();
+
+        if (backgroundSyncInterval) clearInterval(backgroundSyncInterval);
+        backgroundSyncInterval = setInterval(fetchBackgroundSync, 20000);
+    }
+
+    async function fetchBackgroundSync() {
+        if (!currentUser || document.querySelector('.modal.active')) return;
+        try {
+            const remoteData = await loadFromSupabase();
+            await window.syncProfilesFromSupabase({ id: currentUser.id, email: currentUser.email, user_metadata: { fullname: currentUser.fullname } });
+            if (remoteData) {
+                let sTasks = remoteData.tasks || [];
+                normalizeTaskList(sTasks);
+                if (JSON.stringify(sTasks) !== JSON.stringify(tasks)) {
+                    tasks = sTasks;
+                    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({ tasks, users }));
+                    processBackgroundAutomations();
+                    updateCounters();
+                    updateFilterDropdown();
+                    renderTasks();
+                }
+                updateSyncStatus('synced', 'Đã đồng bộ Supabase (SCE)');
+            }
+        } catch (e) {}
+    }
+
+    async function manualSyncNow() {
+        if (!currentUser) return;
+        updateSyncStatus('syncing', 'Đang kiểm tra đồng bộ...');
+        try {
+            await window.syncProfilesFromSupabase({ id: currentUser.id, email: currentUser.email, user_metadata: { fullname: currentUser.fullname } });
+            const remoteData = await loadFromSupabase();
+            if (remoteData && remoteData.tasks) {
+                tasks = remoteData.tasks;
+                migrateOldData();
+                updateCounters();
+                updateFilterDropdown();
+                renderTasks();
+                updateSyncStatus('synced', 'Đã đồng bộ Supabase (SCE)');
+            } else {
+                await upsertToSupabase({ tasks, users });
+                updateSyncStatus('synced', 'Đã đẩy dữ liệu lên Supabase');
+            }
+        } catch (err) {
+            updateSyncStatus('error', 'Chưa tạo bảng sce_tdnv_*');
+            if (currentUser && currentUser.role === 'admin') {
+                openSupabaseModal();
+            } else {
+                alert("Dữ liệu đang được lưu an toàn trên thiết bị. Quản trị viên (Admin) có thể bấm '🗄️ Cấu hình Supabase' để khởi tạo bảng trên đám mây.");
+            }
+        }
+    }
+
+    function normalizeTaskList(list) {
+        list.forEach(t => {
+            if (t.fileLink !== undefined) {
+                t.fileLinks = [];
+                if (t.fileLink.trim() !== '') t.fileLinks.push({ name: 'Văn bản đính kèm', url: t.fileLink.trim() });
+                delete t.fileLink;
+            }
+            if (!t.fileLinks) t.fileLinks = [];
+            if (!t.subtasks) t.subtasks = [];
+            t.subtasks.forEach(st => {
+                if (st.phoihop !== undefined) delete st.phoihop;
+                if (!st.works) st.works = [];
+                if (!st.loaiThoiHan) st.loaiThoiHan = 'cuthe';
+                st.works.forEach(w => { if (!w.trangthai) w.trangthai = 'Chưa thực hiện'; });
+            });
+        });
+    }
+
+    function migrateOldData() {
+        normalizeTaskList(tasks);
+    }
+
+    async function saveData() {
+        if (!currentUser) return;
+        users = sanitizeUsersList(users);
+        const payload = { tasks: tasks, users: users };
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(payload));
+        localStorage.setItem('sce_tasks_data_v4', JSON.stringify(payload));
+        updateSyncStatus('syncing');
+        try {
+            await upsertToSupabase(payload);
+            updateSyncStatus('synced', 'Đã lưu lên Supabase');
+        } catch (err) {
+            console.warn("Lưu Supabase thất bại, đã lưu vào bộ nhớ cục bộ:", err);
+            updateSyncStatus('error', 'Đã lưu bộ nhớ máy');
+        }
+    }
+
+    function openSupabaseModal() {
+        const cfg = getSbConfig();
+        document.getElementById('sbUrlInput').value = cfg.url;
+        document.getElementById('sbKeyInput').value = cfg.key;
+        document.getElementById('supabaseModal').classList.add('active');
+    }
+    function closeSupabaseModal() {
+        document.getElementById('supabaseModal').classList.remove('active');
+    }
+    function saveSupabaseConfig() {
+        const url = document.getElementById('sbUrlInput').value.trim();
+        const key = document.getElementById('sbKeyInput').value.trim();
+        if (!url || !key) { alert("Vui lòng nhập đầy đủ Supabase URL và Anon Key!"); return; }
+        localStorage.setItem('sce_nhiemvu_sb_config', JSON.stringify({ url, key }));
+        initSupabaseClient();
+        closeSupabaseModal();
+        initApp();
+    }
+    async function pushLocalDataToSupabase() {
+        try {
+            updateSyncStatus('syncing', 'Đang đẩy dữ liệu...');
+            await upsertToSupabase({ tasks, users });
+            updateSyncStatus('synced', 'Đã đẩy lên Supabase');
+            alert("✅ Đã đẩy toàn bộ Chương trình, Nhiệm vụ, Công việc lên `sce_tdnv_app_data` thành công!");
+        } catch (err) {
+            updateSyncStatus('error', 'Chưa tạo bảng SQL');
+            alert("⚠️ Bảng `sce_tdnv_profiles` hoặc `sce_tdnv_app_data` chưa tồn tại trên Supabase.\nVui lòng bấm nút '📋 Copy SQL Tạo Bảng & Profile Riêng' và chạy trong mục SQL Editor của Supabase Dashboard trước!");
+        }
+    }
+    function copySupabaseSql() {
+        const sqlScript = `-- KỊCH BẢN KHỞI TẠO BẢNG RIÊNG CHO THEO DÕI NHIỆM VỤ TRÊN CÙNG DATABASE VỚI /QUANLYDAUTHAU
+-- Dùng chung Supabase Auth (auth.users), tách bảng Profile riêng public.sce_tdnv_profiles (Không có chế độ khách & không lưu mật khẩu plaintext)
+
+CREATE TABLE IF NOT EXISTS public.sce_tdnv_profiles (
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    email TEXT UNIQUE NOT NULL,
+    fullname TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'chuyenvien' CHECK (role IN ('chuyenvien', 'lanhdao', 'nhaplieu', 'admin')),
+    department TEXT NOT NULL DEFAULT 'Phòng Xúc tiến đầu tư',
+    is_active BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.sce_tdnv_app_data (
+    id INT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+    data JSONB NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    updated_by_email TEXT
+);
+
+CREATE TABLE IF NOT EXISTS public.sce_tdnv_backups (
+    id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    data JSONB NOT NULL,
+    note TEXT DEFAULT 'Auto-backup on save',
+    created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    created_by_email TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.sce_tdnv_audit_logs (
+    id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    actor_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    actor_email TEXT,
+    action TEXT NOT NULL,
+    summary TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE OR REPLACE FUNCTION public.get_my_tdnv_role()
+RETURNS TEXT LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+    SELECT COALESCE((SELECT role FROM public.sce_tdnv_profiles WHERE id = auth.uid() AND is_active = true), 'pending');
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_my_tdnv_account_active()
+RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+    SELECT COALESCE((SELECT is_active FROM public.sce_tdnv_profiles WHERE id = auth.uid()), false);
+$$;
+
+ALTER TABLE public.sce_tdnv_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sce_tdnv_app_data ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sce_tdnv_backups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sce_tdnv_audit_logs ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "sce_tdnv_profiles_select_auth" ON public.sce_tdnv_profiles;
+CREATE POLICY "sce_tdnv_profiles_select_auth" ON public.sce_tdnv_profiles FOR SELECT TO authenticated USING (id = auth.uid() OR public.is_my_tdnv_account_active() = true);
+
+DROP POLICY IF EXISTS "sce_tdnv_profiles_insert_self_or_admin" ON public.sce_tdnv_profiles;
+CREATE POLICY "sce_tdnv_profiles_insert_self_or_admin" ON public.sce_tdnv_profiles FOR INSERT TO authenticated WITH CHECK (public.get_my_tdnv_role() = 'admin' OR (id = auth.uid() AND role = 'chuyenvien' AND is_active = false));
+
+DROP POLICY IF EXISTS "sce_tdnv_profiles_update_self_or_admin" ON public.sce_tdnv_profiles;
+CREATE POLICY "sce_tdnv_profiles_update_self_or_admin" ON public.sce_tdnv_profiles FOR UPDATE TO authenticated USING (public.get_my_tdnv_role() = 'admin' OR id = auth.uid()) WITH CHECK (public.get_my_tdnv_role() = 'admin' OR (id = auth.uid() AND role = public.get_my_tdnv_role() AND is_active = public.is_my_tdnv_account_active()));
+
+DROP POLICY IF EXISTS "sce_tdnv_profiles_delete_admin" ON public.sce_tdnv_profiles;
+CREATE POLICY "sce_tdnv_profiles_delete_admin" ON public.sce_tdnv_profiles FOR DELETE TO authenticated USING (public.get_my_tdnv_role() = 'admin');
+
+DROP POLICY IF EXISTS "sce_tdnv_app_data_all_active" ON public.sce_tdnv_app_data;
+CREATE POLICY "sce_tdnv_app_data_all_active" ON public.sce_tdnv_app_data FOR ALL TO authenticated USING (public.is_my_tdnv_account_active() = true) WITH CHECK (public.is_my_tdnv_account_active() = true);
+
+DROP POLICY IF EXISTS "sce_tdnv_backups_all_active" ON public.sce_tdnv_backups;
+CREATE POLICY "sce_tdnv_backups_all_active" ON public.sce_tdnv_backups FOR ALL TO authenticated USING (public.is_my_tdnv_account_active() = true) WITH CHECK (public.is_my_tdnv_account_active() = true);`;
+
+        navigator.clipboard.writeText(sqlScript).then(() => {
+            alert("✅ Đã copy kịch bản SQL khởi tạo bảng bảo mật RLS (sce_tdnv_profiles & sce_tdnv_app_data) vào bộ nhớ tạm!\nHãy dán vào Supabase Dashboard -> SQL Editor (chung Project với Quản lý đấu thầu) và nhấn Run.");
+        });
+    }
+
+    // =========================================================================
+    // 5. THUẬT TOÁN TRỌNG SỐ KHẨN CẤP & LAN TRUYỀN CẢNH BÁO (BUBBLE-UP)
+    // =========================================================================
+    function updateCounters() {
+        tasks.forEach(t => {
+            if (t.id >= taskIdCounter) taskIdCounter = t.id + 1;
+            t.subtasks.forEach(st => {
+                if (st.id >= subtaskIdCounter) subtaskIdCounter = st.id + 1;
+                st.works.forEach(w => { if (w.id >= workIdCounter) workIdCounter = w.id + 1; });
+            });
+        });
+    }
+
+    function addLinkRow(containerId, name = '', url = '') {
+        const container = document.getElementById(containerId);
+        const row = document.createElement('div');
+        row.className = 'link-row';
+        row.innerHTML = `<input type="text" placeholder="Tên tài liệu..." value="${name}"> <input type="url" placeholder="Dán link..." value="${url}"> <button type="button" class="btn-remove-link" onclick="this.parentElement.remove()" title="Xóa link">✕</button>`;
+        container.appendChild(row);
+    }
+
+    function getLinksFromContainer(containerId) {
+        const container = document.getElementById(containerId);
+        const rows = container.querySelectorAll('.link-row');
+        const links = [];
+        rows.forEach(row => {
+            const inputs = row.querySelectorAll('input');
+            const name = inputs[0].value.trim();
+            const url = inputs[1].value.trim();
+            if (url) {
+                let finalName = name;
+                if (!finalName) {
+                    try {
+                        const urlObj = new URL(url);
+                        if (urlObj.hostname.includes('drive.google.com')) {
+                            finalName = urlObj.pathname.includes('/folders/') ? 'Thư mục Drive' : 'Tài liệu Drive';
+                        } else {
+                            const pathSegments = urlObj.pathname.split('/').filter(p => p && p.length > 2);
+                            finalName = pathSegments.length > 0 ? decodeURIComponent(pathSegments[pathSegments.length - 1]) : urlObj.hostname;
+                        }
+                    } catch (e) { finalName = url.replace(/^https?:\/\//, ''); }
+                    if (finalName.length > 30) finalName = finalName.substring(0, 30) + '...';
+                }
+                links.push({ name: finalName, url: url });
+            }
+        });
+        return links;
+    }
+
+    function formatDateYMD(date) {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
+    function formatDateVN(dateStr) {
+        if (!dateStr) return '';
+        if (dateStr.includes('T')) dateStr = dateStr.split('T')[0];
+        const parts = dateStr.split('-');
+        if (parts.length === 3) { return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`; }
+        return dateStr;
+    }
+
+    function getWorkWeight(w) {
+        if (w.trangthai === 'Đã hoàn thành') return 4;
+        if (!w.deadline) return 3;
+        const today = new Date().setHours(0, 0, 0, 0);
+        const dlTime = new Date(w.deadline).setHours(0, 0, 0, 0);
+        if (dlTime < today) return 1;
+        const diffDays = Math.round((dlTime - today) / 86400000);
+        if (diffDays >= 0 && diffDays <= 2) return 1.5;
+        if (w.trangthai === 'Đang thực hiện') return 2;
+        return 3;
+    }
+
+    function getSubtaskWeight(st) {
+        if (st.trangthai === 'Đã hoàn thành') return 4;
+        const today = new Date().setHours(0, 0, 0, 0);
+        const dlTime = st.deadline ? new Date(st.deadline).setHours(0, 0, 0, 0) : Infinity;
+        let stMinW = 3;
+        if (st.trangthai === 'Chậm tiến độ' || (dlTime < today)) stMinW = 1;
+        else {
+            const diffDays = Math.round((dlTime - today) / 86400000);
+            if (diffDays >= 0 && diffDays <= 2) stMinW = 1.5;
+            else if (st.trangthai === 'Đang thực hiện') stMinW = 2;
+        }
+        if (st.works && st.works.length > 0) {
+            st.works.forEach(w => {
+                const wWeight = getWorkWeight(w);
+                if (wWeight < stMinW) stMinW = wWeight;
+            });
+        }
+        return stMinW;
+    }
+
+    function getTaskWeight(task) {
+        if (!task.subtasks || task.subtasks.length === 0) return 3;
+        let minW = 4;
+        task.subtasks.forEach(st => {
+            const w = getSubtaskWeight(st);
+            if (w < minW) minW = w;
+        });
+        return minW;
+    }
+
+    function getEarliestDeadline(task) {
+        if (!task.subtasks || task.subtasks.length === 0) return null;
+        let earliest = null;
+        task.subtasks.forEach(st => {
+            if (st.trangthai !== "Đã hoàn thành") {
+                if (st.deadline) {
+                    const d = new Date(st.deadline);
+                    if (!earliest || d < earliest) earliest = d;
+                }
+                if (st.works && st.works.length > 0) {
+                    st.works.forEach(w => {
+                        if (w.trangthai !== "Đã hoàn thành" && w.deadline) {
+                            const wd = new Date(w.deadline);
+                            if (!earliest || wd < earliest) earliest = wd;
+                        }
+                    });
+                }
+            }
+        });
+        return earliest;
+    }
+
+    function formatRecurringTitle(title, loaiThoiHan, deadlineStr) {
+        if (!deadlineStr || loaiThoiHan === 'cuthe') return title;
+        let cleanTitle = title.replace(/\s*\((Tuần từ|Tháng|Quý|Năm)\s+[^)]+\)$/i, '');
+        let d = new Date(deadlineStr);
+        let suffix = '';
+        if (loaiThoiHan === 'hangtuan') {
+            let day = d.getDay();
+            let diffToMon = day === 0 ? -6 : 1 - day;
+            let mon = new Date(d); mon.setDate(d.getDate() + diffToMon);
+            let sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+            let monStr = String(mon.getDate()).padStart(2, '0') + '/' + String(mon.getMonth() + 1).padStart(2, '0');
+            let sunStr = String(sun.getDate()).padStart(2, '0') + '/' + String(sun.getMonth() + 1).padStart(2, '0') + '/' + sun.getFullYear();
+            suffix = ` (Tuần từ ${monStr} đến ${sunStr})`;
+        } else if (loaiThoiHan === 'hangthang') {
+            suffix = ` (Tháng ${d.getMonth() + 1}/${d.getFullYear()})`;
+        } else if (loaiThoiHan === 'hangquy') {
+            let q = Math.floor(d.getMonth() / 3) + 1;
+            suffix = ` (Quý ${q}/${d.getFullYear()})`;
+        } else if (loaiThoiHan === 'hangnam') {
+            suffix = ` (Năm ${d.getFullYear()})`;
+        }
+        return cleanTitle + suffix;
+    }
+
+    function getNextPeriodEnd(dateStr, type) {
+        let d = new Date(dateStr);
+        if (type === 'hangtuan') { d.setDate(d.getDate() + 7); return formatDateYMD(d); }
+        else if (type === 'hangthang') { d.setMonth(d.getMonth() + 1); return formatDateYMD(new Date(d.getFullYear(), d.getMonth() + 1, 0)); }
+        else if (type === 'hangquy') { d.setMonth(d.getMonth() + 3); let q = Math.floor(d.getMonth() / 3); return formatDateYMD(new Date(d.getFullYear(), (q + 1) * 3, 0)); }
+        else if (type === 'hangnam') { d.setFullYear(d.getFullYear() + 1); return formatDateYMD(new Date(d.getFullYear(), 12, 0)); }
+        return dateStr;
+    }
+
+    function onLoaiThoiHanChange(selectElem, dateInputId) {
+        const val = selectElem.value;
+        const dateInput = document.getElementById(dateInputId);
+        if (val !== 'cuthe' && !dateInput.value) {
+            let d = new Date();
+            if (val === 'hangtuan') { const day = d.getDay(); d.setDate(d.getDate() + (day <= 5 ? 5 - day : 6)); dateInput.value = formatDateYMD(d); }
+            else if (val === 'hangthang') { dateInput.value = formatDateYMD(new Date(d.getFullYear(), d.getMonth() + 1, 0)); }
+            else if (val === 'hangquy') { let q = Math.floor(d.getMonth() / 3); dateInput.value = formatDateYMD(new Date(d.getFullYear(), (q + 1) * 3, 0)); }
+            else if (val === 'hangnam') { dateInput.value = formatDateYMD(new Date(d.getFullYear(), 12, 0)); }
+        }
+    }
+
+    function processBackgroundAutomations() {
+        let dataChanged = false;
+        const todayTime = new Date().setHours(0, 0, 0, 0);
+        tasks.forEach(task => {
+            let subtasksToKeep = [];
+            let subtasksToAdd = [];
+            task.subtasks.forEach(st => {
+                if (!st.loaiThoiHan) st.loaiThoiHan = 'cuthe';
+                const dlTime = st.deadline ? new Date(st.deadline).setHours(0, 0, 0, 0) : Infinity;
+
+                if (st.trangthai !== 'Đã hoàn thành' && dlTime < todayTime && st.trangthai !== 'Chậm tiến độ') {
+                    st.trangthai = 'Chậm tiến độ';
+                    dataChanged = true;
+                }
+                if (st.trangthai === 'Đã hoàn thành' && !st.completedDate) {
+                    st.completedDate = new Date().toISOString();
+                    dataChanged = true;
+                } else if (st.trangthai !== 'Đã hoàn thành' && st.completedDate) {
+                    st.completedDate = null;
+                    dataChanged = true;
+                }
+
+                let keep = true;
+                if (st.trangthai === 'Đã hoàn thành' && st.completedDate) {
+                    const compTime = new Date(st.completedDate).getTime();
+                    if ((new Date().getTime() - compTime) / 86400000 >= 7) {
+                        keep = false;
+                        dataChanged = true;
+                    }
+                }
+
+                if (keep) {
+                    subtasksToKeep.push(st);
+                    let currentForSpawn = st;
+                    while (['hangtuan', 'hangthang', 'hangquy', 'hangnam'].includes(currentForSpawn.loaiThoiHan) && !currentForSpawn.spawnedNext) {
+                        let currentDlTime = new Date(currentForSpawn.deadline).setHours(0, 0, 0, 0);
+                        if (todayTime > currentDlTime) {
+                            currentForSpawn.spawnedNext = true;
+                            dataChanged = true;
+                            const nextDl = getNextPeriodEnd(currentForSpawn.deadline, currentForSpawn.loaiThoiHan);
+                            const nextTitle = formatRecurringTitle(currentForSpawn.title, currentForSpawn.loaiThoiHan, nextDl);
+                            let nextSt = {
+                                id: subtaskIdCounter++,
+                                title: nextTitle,
+                                loaiThoiHan: currentForSpawn.loaiThoiHan,
+                                deadline: nextDl,
+                                chutri: currentForSpawn.chutri,
+                                trangthai: 'Chưa thực hiện',
+                                ketqua: '',
+                                spawnedNext: false,
+                                completedDate: null,
+                                works: []
+                            };
+                            subtasksToAdd.push(nextSt);
+                            currentForSpawn = nextSt;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+            });
+            if (dataChanged) {
+                task.subtasks = [...subtasksToKeep, ...subtasksToAdd];
+            }
+        });
+        if (dataChanged && currentUser) {
+            saveData();
+        }
+    }
+
+    // =========================================================================
+    // 6. HIỂN THỊ GIAO DIỆN, BỘ LỌC & Bố CỤC ĐA THIẾT BỊ
+    // =========================================================================
+    function setGridLayout(mode, save = true) {
+        const listEl = document.getElementById('taskList');
+        if (!listEl) return;
+        listEl.classList.remove('cols-1', 'cols-2', 'cols-3');
+        if (mode !== 'auto') listEl.classList.add(mode);
+
+        ['viewAuto', 'viewCols3', 'viewCols2', 'viewCols1'].forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) btn.classList.remove('active');
+        });
+        const mapId = { 'auto': 'viewAuto', 'cols-3': 'viewCols3', 'cols-2': 'viewCols2', 'cols-1': 'viewCols1' }[mode];
+        if (mapId && document.getElementById(mapId)) document.getElementById(mapId).classList.add('active');
+        if (save) localStorage.setItem('sce_nhiemvu_grid_layout', mode);
+    }
+
+    function setStatusFilter(filterType) {
+        currentStatusFilter = (currentStatusFilter === filterType && filterType !== 'all') ? 'all' : filterType;
+
+        ['kpiCardAll', 'kpiCardActive', 'kpiCardWarning', 'kpiCardOverdue'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('active-filter');
+        });
+        const activeKpiId = {
+            'all': 'kpiCardAll',
+            'active': 'kpiCardActive',
+            'warning': 'kpiCardWarning',
+            'overdue': 'kpiCardOverdue'
+        }[currentStatusFilter];
+        if (activeKpiId && document.getElementById(activeKpiId)) {
+            document.getElementById(activeKpiId).classList.add('active-filter');
+        }
+
+        ['mobNavAll', 'mobNavOverdue', 'mobNavWarning'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('active');
+        });
+        if (currentStatusFilter === 'all' && document.getElementById('mobNavAll')) document.getElementById('mobNavAll').classList.add('active');
+        if (currentStatusFilter === 'overdue' && document.getElementById('mobNavOverdue')) document.getElementById('mobNavOverdue').classList.add('active');
+        if (currentStatusFilter === 'warning' && document.getElementById('mobNavWarning')) document.getElementById('mobNavWarning').classList.add('active');
+
+        renderTasks();
+    }
+
+    function toggleExpand(element, stId) {
+        const item = element.parentElement;
+        item.classList.toggle('expanded');
+        if (item.classList.contains('expanded')) {
+            if (!expandedSubtaskIds.includes(stId)) expandedSubtaskIds.push(stId);
+        } else {
+            expandedSubtaskIds = expandedSubtaskIds.filter(id => id !== stId);
+        }
+    }
+
+    function toggleExpandAll() {
+        const allIds = [];
+        tasks.forEach(t => t.subtasks.forEach(st => allIds.push(st.id)));
+        const btn = document.getElementById('btnToggleExpandAll');
+        if (expandedSubtaskIds.length < allIds.length) {
+            expandedSubtaskIds = allIds;
+            if (btn) btn.innerHTML = '📁 Thu gọn tất cả';
+        } else {
+            expandedSubtaskIds = [];
+            if (btn) btn.innerHTML = '📂 Mở rộng tất cả';
+        }
+        renderTasks();
+    }
+
+    function updateKPIs(baseList) {
+        let total = baseList.length;
+        let activeSt = 0;
+        let warningCount = 0;
+        let overdueCount = 0;
+        baseList.forEach(t => {
+            t.subtasks.forEach(st => {
+                if (st.trangthai === 'Đang thực hiện') activeSt++;
+                let stW = getSubtaskWeight(st);
+                if (stW === 1) overdueCount++;
+                if (stW === 1.5) warningCount++;
+            });
+        });
+        document.getElementById('kpiTotal').innerText = total;
+        document.getElementById('kpiActive').innerText = activeSt;
+        document.getElementById('kpiWarning').innerText = warningCount;
+        document.getElementById('kpiOverdue').innerText = overdueCount;
+    }
+
+    function exportExcel() {
+        if (tasks.length === 0) { alert("Không có dữ liệu để xuất!"); return; }
+        let data = [];
+        data.push(['Chương trình / Kế hoạch', 'Nhiệm vụ cụ thể', 'Công việc triển khai', 'Chủ trì', 'Phối hợp', 'Hạn chót', 'Trạng thái', 'Kết quả / Ghi chú']);
+        tasks.forEach(t => {
+            if (!t.subtasks || t.subtasks.length === 0) {
+                data.push([t.title, '', '', '', '', '', '', '']);
+            } else {
+                t.subtasks.forEach(st => {
+                    let stTitle = st.title + (st.loaiThoiHan !== 'cuthe' ? ` (Lặp: ${st.loaiThoiHan})` : '');
+                    if (!st.works || st.works.length === 0) {
+                        data.push([t.title, stTitle, '', st.chutri || '', '', formatDateVN(st.deadline), st.trangthai, st.ketqua || '']);
+                    } else {
+                        st.works.forEach(w => {
+                            data.push([t.title, stTitle, w.title, w.chutri || '', w.phoihop || '', formatDateVN(w.deadline), w.trangthai || 'Chưa thực hiện', st.ketqua || '']);
+                        });
+                    }
+                });
+            }
+        });
+        let ws = XLSX.utils.aoa_to_sheet(data);
+        let wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "TienDo");
+        XLSX.writeFile(wb, "Bao_Cao_Tien_Do_SCE.xlsx");
+    }
+
+    function renderTasks() {
+        processBackgroundAutomations();
+
+        const currentOfficerName = currentUser ? currentUser.fullname : '';
+        const currentRole = currentUser ? (currentUser.role || 'chuyenvien') : 'chuyenvien';
+        const isAdmin = currentRole === 'admin';
+        const isNhapLieu = currentRole === 'nhaplieu';
+        const isLanhDao = currentRole === 'lanhdao';
+
+        const searchTerm = document.getElementById('searchInput') ? document.getElementById('searchInput').value.toLowerCase().trim() : '';
+        const filterUser = document.getElementById('filterUser') ? document.getElementById('filterUser').value : '';
+
+        let renderList = JSON.parse(JSON.stringify(tasks));
+        if (searchTerm || filterUser) {
+            renderList = renderList.filter(t => {
+                let tMatchSearch = !searchTerm || t.title.toLowerCase().includes(searchTerm);
+                t.subtasks = t.subtasks.filter(st => {
+                    let stMatchSearch = !searchTerm || st.title.toLowerCase().includes(searchTerm) || (st.ketqua && st.ketqua.toLowerCase().includes(searchTerm));
+                    let stMatchUser = !filterUser || st.chutri === filterUser;
+                    if (st.works) {
+                        st.works = st.works.filter(w => {
+                            let wMatchSearch = !searchTerm || w.title.toLowerCase().includes(searchTerm) || (w.phoihop && w.phoihop.toLowerCase().includes(searchTerm));
+                            let wMatchUser = !filterUser || w.chutri === filterUser;
+                            return (wMatchSearch || stMatchSearch || tMatchSearch) && (wMatchUser || stMatchUser);
+                        });
+                    }
+                    return ((stMatchSearch || tMatchSearch) && stMatchUser) || (st.works && st.works.length > 0);
+                });
+                return (tMatchSearch && !filterUser) || t.subtasks.length > 0;
+            });
+        }
+
+        // Cập nhật KPI dựa trên danh sách đã lọc theo từ khóa/chủ trì
+        updateKPIs(renderList);
+
+        // Lọc thêm nếu người dùng bấm vào thẻ KPI trạng thái
+        if (currentStatusFilter !== 'all') {
+            renderList = renderList.filter(t => {
+                t.subtasks = t.subtasks.filter(st => {
+                    const stW = getSubtaskWeight(st);
+                    if (currentStatusFilter === 'overdue') return stW === 1;
+                    if (currentStatusFilter === 'warning') return stW === 1.5;
+                    if (currentStatusFilter === 'active') return st.trangthai === 'Đang thực hiện';
+                    return true;
+                });
+                return t.subtasks.length > 0;
+            });
+        }
+
+        const container = document.getElementById('taskList');
+        container.innerHTML = '';
+
+        // Sắp xếp Bubble-Up Cấp 1 -> Cấp 2 -> Cấp 3
+        renderList.sort((a, b) => {
+            const wA = getTaskWeight(a);
+            const wB = getTaskWeight(b);
+            if (wA !== wB) return wA - wB;
+            const dlA = getEarliestDeadline(a) || Infinity;
+            const dlB = getEarliestDeadline(b) || Infinity;
+            return dlA - dlB;
+        });
+
+        renderList.forEach(task => {
+            if (task.subtasks) {
+                task.subtasks.sort((a, b) => {
+                    const wA = getSubtaskWeight(a);
+                    const wB = getSubtaskWeight(b);
+                    if (wA !== wB) return wA - wB;
+                    const dA = a.deadline ? new Date(a.deadline).getTime() : Infinity;
+                    const dB = b.deadline ? new Date(b.deadline).getTime() : Infinity;
+                    return dA - dB;
+                });
+                task.subtasks.forEach(st => {
+                    if (st.works) {
+                        st.works.sort((wa, wb) => {
+                            const wA = getWorkWeight(wa);
+                            const wB = getWorkWeight(wb);
+                            if (wA !== wB) return wA - wB;
+                            const dWA = wa.deadline ? new Date(wa.deadline).getTime() : Infinity;
+                            const dWB = wb.deadline ? new Date(wb.deadline).getTime() : Infinity;
+                            return dWA - dWB;
+                        });
+                    }
+                });
+            }
+        });
+
+        if (renderList.length === 0) {
+            container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 48px 20px; background: #fff; border-radius: 12px; color: #64748b; border: 1px dashed #cbd5e1;">Không tìm thấy chương trình hoặc nhiệm vụ nào phù hợp với bộ lọc hiện tại.</div>`;
+            return;
+        }
+
+        renderList.forEach(task => {
+            const taskWeight = getTaskWeight(task);
+
+            let fileHtml = '';
+            if (task.fileLinks && task.fileLinks.length > 0) {
+                fileHtml = '<div class="file-links-display">';
+                task.fileLinks.forEach(link => {
+                    let href = link.url.trim();
+                    if (href && !href.startsWith('http://') && !href.startsWith('https://')) href = 'https://' + href;
+                    fileHtml += `<a href="${href}" target="_blank" rel="noopener noreferrer" class="btn-attach" title="${link.url}">🔗 <span class="btn-attach-text">${link.name}</span></a>`;
+                });
+                fileHtml += '</div>';
+            }
+
+            const origTask = tasks.find(x => x.id === task.id) || task;
+            let totalSt = origTask.subtasks.length;
+            let compSt = origTask.subtasks.filter(x => x.trangthai === 'Đã hoàn thành').length;
+            let progress = totalSt === 0 ? 0 : Math.round((compSt / totalSt) * 100);
+            let progressColor = progress === 100 ? 'var(--success)' : 'var(--info)';
+
+            let subtasksHTML = '';
+            task.subtasks.forEach(st => {
+                const stWeight = getSubtaskWeight(st);
+
+                let stClass = 'subtask-item';
+                let statusBg = '#e2e8f0';
+                let badgeClass = 'bg-secondary';
+                if (expandedSubtaskIds.includes(st.id)) stClass += ' expanded';
+
+                if (st.trangthai === 'Đã hoàn thành') {
+                    statusBg = '#bbf7d0';
+                    badgeClass = 'bg-success';
+                    stClass += ' subtask-completed';
+                } else if (stWeight === 1) {
+                    statusBg = '#fecdd3';
+                    badgeClass = 'bg-danger';
+                    stClass += ' subtask-overdue';
+                } else if (stWeight === 1.5) {
+                    statusBg = '#fde68a';
+                    badgeClass = 'bg-warning';
+                    stClass += ' subtask-warning';
+                } else if (st.trangthai === 'Đang thực hiện') {
+                    statusBg = '#bae6fd';
+                    badgeClass = 'bg-info';
+                }
+
+                // Không hiển thị chữ "Cụ thể" nếu loaiThoiHan === 'cuthe'
+                let loopHtml = '';
+                if (st.loaiThoiHan && st.loaiThoiHan !== 'cuthe') {
+                    let cycleText = '';
+                    if (st.loaiThoiHan === 'hangtuan') cycleText = 'Hàng tuần';
+                    else if (st.loaiThoiHan === 'hangthang') cycleText = 'Hàng tháng';
+                    else if (st.loaiThoiHan === 'hangquy') cycleText = 'Hàng quý';
+                    else if (st.loaiThoiHan === 'hangnam') cycleText = 'Hàng năm';
+                    loopHtml = `<strong>Chu kỳ:</strong> <span>${cycleText}</span>`;
+                }
+
+                const isSubtaskLead = (currentOfficerName && currentOfficerName === st.chutri);
+
+                let stActionsHTML = '';
+                if ((isAdmin || isNhapLieu || isLanhDao) && st.trangthai !== 'Đã hoàn thành') {
+                    stActionsHTML += `<button class="btn btn-success approve-action" onclick="approveSubtask(${task.id}, ${st.id})">✅ Duyệt HT</button> `;
+                }
+                if (isAdmin || isNhapLieu) {
+                    stActionsHTML += `
+                        <button class="btn btn-edit st-action" onclick="openSubtaskModal(${task.id}, ${st.id})">✏️ Sửa NV</button>
+                        <button class="btn btn-danger st-action" onclick="deleteSubtask(${task.id}, ${st.id})">🗑️ Xóa NV</button>
+                    `;
+                }
+
+                let addWorkBtn = (isAdmin || isNhapLieu || isSubtaskLead)
+                    ? `<button class="btn btn-add work-action" style="padding: 5px 10px; font-size: 12px; min-height: 32px;" onclick="openWorkModal(${task.id}, ${st.id})">➕ Thêm CV</button>`
+                    : '';
+
+                // Render Works (Cấp 3)
+                let worksHTML = '';
+                if (st.works && st.works.length > 0) {
+                    worksHTML = `<div class="work-list-container">`;
+                    st.works.forEach(w => {
+                        const wWeight = getWorkWeight(w);
+                        let wClass = 'work-item';
+                        let wTitleColor = 'var(--text-main)';
+                        if (w.trangthai !== 'Đã hoàn thành') {
+                            if (wWeight === 1) { wClass += ' work-overdue'; wTitleColor = 'var(--danger)'; }
+                            else if (wWeight === 1.5) { wClass += ' work-warning'; wTitleColor = '#d35400'; }
+                        } else {
+                            wClass += ' work-completed';
+                        }
+
+                        const isWorkLead = (currentOfficerName && currentOfficerName === w.chutri);
+                        let workActionsHTML = '';
+                        if ((isAdmin || isNhapLieu || isLanhDao) && w.trangthai !== 'Đã hoàn thành') {
+                            workActionsHTML += `<button class="btn btn-success approve-action" style="padding: 4px 8px; font-size: 11px; min-height: 30px;" onclick="approveWork(${task.id}, ${st.id}, ${w.id}); event.stopPropagation();">✅ Duyệt HT</button> `;
+                        }
+                        if (isAdmin || isNhapLieu || isSubtaskLead || isWorkLead) {
+                            workActionsHTML += `<button class="btn btn-edit work-action" style="padding: 4px 8px; font-size: 11px; min-height: 30px;" onclick="openWorkModal(${task.id}, ${st.id}, ${w.id}); event.stopPropagation();">✏️ Sửa</button> `;
+                        }
+                        if (isAdmin || isNhapLieu || isSubtaskLead) {
+                            workActionsHTML += `<button class="btn btn-danger work-action" style="padding: 4px 8px; font-size: 11px; min-height: 30px;" onclick="deleteWork(${task.id}, ${st.id}, ${w.id}); event.stopPropagation();">🗑️ Xóa</button>`;
+                        }
+
+                        worksHTML += `
+                            <div class="${wClass}">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap;">
+                                    <div style="flex: 1; min-width: 180px;">
+                                        <div style="font-weight: 600; font-size: 13.5px; color: ${wTitleColor}; margin-bottom: 6px;">• ${w.title}</div>
+                                        <div class="info-grid">
+                                            <strong>Chủ trì:</strong> <span>${w.chutri || '---'}</span>
+                                            <strong>Phối hợp:</strong> <span>${w.phoihop || '---'}</span>
+                                            <strong>Trạng thái:</strong> <span style="font-weight:600; color: ${w.trangthai === 'Đã hoàn thành' ? 'var(--success)' : 'inherit'}">${w.trangthai || 'Chưa thực hiện'}</span>
+                                            <strong>Hạn chót:</strong> <span style="color: #000; font-weight:700;">${formatDateVN(w.deadline)}</span>
+                                        </div>
+                                    </div>
+                                    <div class="task-actions" style="display:flex; gap: 5px; flex-shrink: 0;">${workActionsHTML}</div>
+                                </div>
+                            </div>`;
+                    });
+                    worksHTML += `</div>`;
+                } else {
+                    worksHTML = `<div style="font-size: 12px; color: #64748b; font-style: italic; margin-top: 8px;">Chưa có công việc triển khai chi tiết.</div>`;
+                }
+
+                const titleIcon = st.trangthai === 'Đã hoàn thành' ? '✅' : (stWeight === 1.5 ? '⏳' : (stWeight === 1 ? '⚠️' : '▶'));
+                const chutriTag = st.chutri ? `<span class="badge bg-secondary">👤 ${st.chutri}</span>` : '';
+                const workCountTag = (st.works && st.works.length > 0) ? `<span class="badge bg-info">📋 ${st.works.length} CV</span>` : '';
+
+                subtasksHTML += `
+                    <div class="${stClass}">
+                        <div class="subtask-summary" onclick="toggleExpand(this, ${st.id})">
+                            <div class="st-title-sum text-truncate">${titleIcon} ${st.title}</div>
+                            <div class="st-meta-sum">
+                                <span class="badge" style="background:${statusBg}; color:#000;">${st.trangthai}</span>
+                                <span class="badge ${badgeClass}">📅 Hạn: <strong>${formatDateVN(st.deadline)}</strong></span>
+                                ${chutriTag}
+                                ${workCountTag}
+                            </div>
+                        </div>
+                        <div class="subtask-full-content">
+                            ${stActionsHTML ? `<div class="task-actions" style="margin-bottom:12px; gap: 8px; flex-wrap: wrap; justify-content: flex-end; border-bottom: 1px dashed #e2e8f0; padding-bottom: 10px;">${stActionsHTML}</div>` : ''}
+                            <div class="info-grid">
+                                <strong>Chủ trì:</strong> <span>${st.chutri || '---'}</span>
+                                ${loopHtml}
+                                <strong>Kết quả:</strong> <span>${st.ketqua || '---'}</span>
+                            </div>
+                            <div style="margin-top: 16px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                    <strong style="font-size: 13px; color: var(--primary);">Các công việc triển khai (${st.works ? st.works.length : 0}):</strong>
+                                    ${addWorkBtn}
+                                </div>
+                                ${worksHTML}
+                            </div>
+                        </div>
+                    </div>`;
+            });
+
+            let taskStateClass = '';
+            let taskStateText = '';
+            if (taskWeight === 1) {
+                taskStateClass = 'urgent';
+                taskStateText = '<span class="urgent-text">⚠️ Cảnh báo: Có nhiệm vụ / công việc quá hạn hoặc chậm tiến độ</span>';
+            } else if (taskWeight === 1.5) {
+                taskStateClass = 'warning';
+                taskStateText = '<span class="warning-text">⏳ Chú ý: Có nhiệm vụ / công việc sắp đến hạn (≤ 2 ngày)</span>';
+            } else if (taskWeight === 4) {
+                taskStateClass = 'completed';
+            }
+
+            let taskActionsHTML = '';
+            if (isAdmin || isNhapLieu) {
+                taskActionsHTML = `
+                    <div class="task-actions ct-action">
+                        <button class="btn btn-edit" onclick="openTaskModal(${task.id})">✏️ Sửa CT</button>
+                        <button class="btn btn-danger" onclick="deleteTask(${task.id})">🗑️ Xóa</button>
+                    </div>`;
+            }
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'task-card-wrapper';
+            wrapper.innerHTML = `
+                <article class="task-card ${taskStateClass}">
+                    <div class="task-header">
+                        <div class="task-title-area">
+                            <h3 class="task-title">${task.title}</h3>
+                            <div class="progress-row">
+                                <div class="progress-bg">
+                                    <div class="progress-bar" style="width: ${progress}%; background-color: ${progressColor};"></div>
+                                </div>
+                                <span class="progress-label">${compSt}/${totalSt} (${progress}%)</span>
+                            </div>
+                            ${fileHtml}
+                        </div>
+                        ${taskActionsHTML}
+                    </div>
+                    ${taskStateText ? `<div>${taskStateText}</div>` : ''}
+
+                    <div class="subtasks-wrapper">
+                        <div class="subtasks-header-row">
+                            <h4>Nhiệm vụ cụ thể (${task.subtasks.length}):</h4>
+                            ${(isAdmin || isNhapLieu) ? `<button class="btn btn-add st-action" onclick="openSubtaskModal(${task.id})">➕ Thêm Nhiệm vụ</button>` : ''}
+                        </div>
+                        ${subtasksHTML}
+                    </div>
+                </article>
+            `;
+            container.appendChild(wrapper);
+        });
+    }
+
+    // =========================================================================
+    // 7. CRUD CẤP 1 (CHƯƠNG TRÌNH) / CẤP 2 (NHIỆM VỤ) / CẤP 3 (CÔNG VIỆC)
+    // =========================================================================
+    function openTaskModal(taskId = null) {
+        const role = currentUser ? currentUser.role : '';
+        if (role !== 'admin' && role !== 'nhaplieu') return;
+        document.getElementById('taskModal').classList.add('active');
+        document.getElementById('newLinksContainer').innerHTML = '';
+        if (taskId) {
+            document.getElementById('modalTaskHeader').innerText = 'Sửa Chương trình / Kế hoạch';
+            document.getElementById('modalTaskId').value = taskId;
+            const t = tasks.find(x => x.id === taskId);
+            document.getElementById('newTaskTitle').value = t.title;
+            if (t.fileLinks && t.fileLinks.length > 0) {
+                t.fileLinks.forEach(link => addLinkRow('newLinksContainer', link.name, link.url));
+            } else {
+                addLinkRow('newLinksContainer');
+            }
+        } else {
+            document.getElementById('modalTaskHeader').innerText = 'Tạo mới Chương trình / Kế hoạch';
+            document.getElementById('modalTaskId').value = '';
+            document.getElementById('newTaskTitle').value = '';
+            addLinkRow('newLinksContainer');
+        }
+    }
+    function closeTaskModal() { document.getElementById('taskModal').classList.remove('active'); }
+    function saveTask() {
+        const id = document.getElementById('modalTaskId').value;
+        const title = document.getElementById('newTaskTitle').value;
+        if (!title.trim()) { alert("Vui lòng nhập tên Chương trình!"); return; }
+        const links = getLinksFromContainer('newLinksContainer');
+        if (id) {
+            const t = tasks.find(x => x.id == id);
+            t.title = title.trim();
+            t.fileLinks = links;
+        } else {
+            tasks.push({ id: taskIdCounter++, title: title.trim(), fileLinks: links, subtasks: [] });
+        }
+        saveData();
+        renderTasks();
+        closeTaskModal();
+    }
+    function deleteTask(id) {
+        if (confirm("Xóa Chương trình này? Toàn bộ nhiệm vụ và công việc bên trong sẽ bị xóa theo.")) {
+            tasks = tasks.filter(t => t.id !== id);
+            saveData();
+            renderTasks();
+        }
+    }
+
+    function openSubtaskModal(taskId, subtaskId = null) {
+        document.getElementById('subtaskModal').classList.add('active');
+        document.getElementById('modalStTaskId').value = taskId;
+        document.getElementById('st-chutri').innerHTML = generateUserDropdown('');
+        if (subtaskId) {
+            document.getElementById('modalStHeader').innerText = 'Sửa Nhiệm vụ cụ thể';
+            document.getElementById('modalStId').value = subtaskId;
+            const t = tasks.find(x => x.id == taskId);
+            const st = t.subtasks.find(x => x.id == subtaskId);
+            let cleanTitle = st.title.replace(/\s*\((Tuần từ|Tháng|Quý|Năm)\s+[^)]+\)$/i, '');
+            document.getElementById('st-title').value = cleanTitle;
+            document.getElementById('st-lth').value = st.loaiThoiHan;
+            document.getElementById('st-deadline').value = st.deadline;
+            document.getElementById('st-chutri').value = st.chutri;
+            document.getElementById('st-trangthai').value = st.trangthai;
+            document.getElementById('st-ketqua').value = st.ketqua;
+        } else {
+            document.getElementById('modalStHeader').innerText = 'Tạo Nhiệm vụ cụ thể mới';
+            document.getElementById('modalStId').value = '';
+            document.getElementById('st-title').value = '';
+            document.getElementById('st-lth').value = 'cuthe';
+            document.getElementById('st-deadline').value = '';
+            document.getElementById('st-chutri').value = '';
+            document.getElementById('st-trangthai').value = 'Chưa thực hiện';
+            document.getElementById('st-ketqua').value = '';
+            onLoaiThoiHanChange(document.getElementById('st-lth'), 'st-deadline');
+        }
+    }
+    function closeSubtaskModal() { document.getElementById('subtaskModal').classList.remove('active'); }
+    function saveSubtask() {
+        const taskId = document.getElementById('modalStTaskId').value;
+        const stId = document.getElementById('modalStId').value;
+        const title = document.getElementById('st-title').value;
+        const lth = document.getElementById('st-lth').value;
+        const dl = document.getElementById('st-deadline').value;
+        const ct = document.getElementById('st-chutri').value;
+        const tt = document.getElementById('st-trangthai').value;
+        const kq = document.getElementById('st-ketqua').value;
+        if (!title.trim()) { alert("Vui lòng nhập tên nhiệm vụ!"); return; }
+        if (!dl) { alert("Vui lòng chọn thời hạn!"); return; }
+        const formattedTitle = formatRecurringTitle(title.trim(), lth, dl);
+        const task = tasks.find(t => t.id == taskId);
+        if (stId) {
+            const st = task.subtasks.find(x => x.id == stId);
+            st.title = formattedTitle;
+            st.loaiThoiHan = lth;
+            st.deadline = dl;
+            st.chutri = ct;
+            st.trangthai = tt;
+            st.ketqua = kq;
+            if (new Date(dl).setHours(0, 0, 0, 0) >= new Date().setHours(0, 0, 0, 0)) st.spawnedNext = false;
+        } else {
+            task.subtasks.push({
+                id: subtaskIdCounter++,
+                title: formattedTitle,
+                loaiThoiHan: lth,
+                deadline: dl,
+                chutri: ct,
+                trangthai: tt,
+                ketqua: kq,
+                spawnedNext: false,
+                completedDate: null,
+                works: []
+            });
+        }
+        saveData();
+        renderTasks();
+        closeSubtaskModal();
+    }
+    function deleteSubtask(taskId, subtaskId) {
+        if (confirm("Xóa nhiệm vụ cụ thể này?")) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                task.subtasks = task.subtasks.filter(st => st.id !== subtaskId);
+                saveData();
+                renderTasks();
+            }
+        }
+    }
+    function approveSubtask(taskId, subtaskId) {
+        if (confirm("Xác nhận duyệt hoàn thành nhiệm vụ này?")) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                const subtask = task.subtasks.find(st => st.id === subtaskId);
+                if (subtask) {
+                    subtask.trangthai = 'Đã hoàn thành';
+                    subtask.completedDate = new Date().toISOString();
+                    saveData();
+                    renderTasks();
+                }
+            }
+        }
+    }
+
+    function openWorkModal(taskId, subtaskId, workId = null) {
+        document.getElementById('workModal').classList.add('active');
+        document.getElementById('modalWTaskId').value = taskId;
+        document.getElementById('modalWSubtaskId').value = subtaskId;
+        document.getElementById('w-ct').innerHTML = generateUserDropdown('');
+        if (workId) {
+            document.getElementById('modalWHeader').innerText = 'Sửa Công việc triển khai';
+            document.getElementById('modalWId').value = workId;
+            const t = tasks.find(x => x.id == taskId);
+            const st = t.subtasks.find(x => x.id == subtaskId);
+            const w = st.works.find(x => x.id == workId);
+            document.getElementById('w-title').value = w.title;
+            document.getElementById('w-ct').value = w.chutri;
+            document.getElementById('w-ph').value = w.phoihop;
+            document.getElementById('w-dl').value = w.deadline;
+            document.getElementById('w-tt').value = w.trangthai || 'Chưa thực hiện';
+        } else {
+            document.getElementById('modalWHeader').innerText = 'Thêm Công việc triển khai';
+            document.getElementById('modalWId').value = '';
+            document.getElementById('w-title').value = '';
+            document.getElementById('w-ct').value = '';
+            document.getElementById('w-ph').value = '';
+            document.getElementById('w-dl').value = '';
+            document.getElementById('w-tt').value = 'Chưa thực hiện';
+        }
+    }
+    function closeWorkModal() { document.getElementById('workModal').classList.remove('active'); }
+    function saveWork() {
+        const taskId = document.getElementById('modalWTaskId').value;
+        const stId = document.getElementById('modalWSubtaskId').value;
+        const wId = document.getElementById('modalWId').value;
+        const title = document.getElementById('w-title').value;
+        const ct = document.getElementById('w-ct').value;
+        const ph = document.getElementById('w-ph').value;
+        const dl = document.getElementById('w-dl').value;
+        const tt = document.getElementById('w-tt').value;
+        if (!title.trim()) { alert("Vui lòng nhập tên công việc!"); return; }
+        const task = tasks.find(t => t.id == taskId);
+        const subtask = task.subtasks.find(st => st.id == stId);
+        if (wId) {
+            const w = subtask.works.find(x => x.id == wId);
+            w.title = title.trim();
+            w.chutri = ct;
+            w.phoihop = ph.trim();
+            w.deadline = dl;
+            w.trangthai = tt;
+        } else {
+            subtask.works.push({
+                id: workIdCounter++,
+                title: title.trim(),
+                chutri: ct,
+                phoihop: ph.trim(),
+                deadline: dl,
+                trangthai: tt
+            });
+        }
+        saveData();
+        renderTasks();
+        closeWorkModal();
+    }
+    function deleteWork(taskId, subtaskId, workId) {
+        if (confirm("Xóa công việc triển khai này?")) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                const subtask = task.subtasks.find(st => st.id === subtaskId);
+                if (subtask) {
+                    subtask.works = subtask.works.filter(w => w.id !== workId);
+                    saveData();
+                    renderTasks();
+                }
+            }
+        }
+    }
+    function approveWork(taskId, subtaskId, workId) {
+        if (confirm("Xác nhận duyệt hoàn thành công việc này?")) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                const subtask = task.subtasks.find(st => st.id === subtaskId);
+                if (subtask) {
+                    const work = subtask.works.find(w => w.id === workId);
+                    if (work) {
+                        work.trangthai = 'Đã hoàn thành';
+                        saveData();
+                        renderTasks();
+                    }
+                }
+            }
+        }
+    }
+
+    // Đóng modal bằng phím Escape trên máy tính / bàn phím rời
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal.active').forEach(m => m.classList.remove('active'));
+        }
+    });
+</script>
+</body>
+</html>

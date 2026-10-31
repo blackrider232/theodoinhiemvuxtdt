@@ -1,0 +1,30 @@
+{
+  "name": "Phần mềm Theo dõi Nhiệm vụ Xúc tiến đầu tư - SCE",
+  "short_name": "Nhiệm vụ SCE",
+  "description": "Hệ thống Theo dõi Nhiệm vụ Xúc tiến đầu tư - Sắp xếp Tự động & Phân quyền 5 Vai trò (SCE)",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f4f7f6",
+  "theme_color": "#004b87",
+  "icons": [
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "app-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+# Không đẩy các file SQL nội bộ hoặc dữ liệu seed nhạy cảm lên GitHub Public
+database/
+src/
+*.sql
+*.bak
+.DS_Store
+Thumbs.db
